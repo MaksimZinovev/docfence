@@ -1,25 +1,16 @@
-# Docfence
+# docfence
 
 **Validate markdown specs from the inside out.**
 
-```bash
-██████╗  ██████╗  ██████╗███████╗███████╗███╗   ██╗ ██████╗███████╗
-██╔══██╗██╔═══██╗██╔════╝██╔════╝██╔════╝████╗  ██║██╔════╝██╔════╝
-██║  ██║██║   ██║██║     █████╗  █████╗  ██╔██╗ ██║██║     █████╗  
-██║  ██║██║   ██║██║     ██╔══╝  ██╔══╝  ██║╚██╗██║██║     ██╔══╝  
-██████╔╝╚██████╔╝╚██████╗██║     ███████╗██║ ╚████║╚██████╗███████╗
-╚═════╝  ╚═════╝  ╚═════╝╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
-```
-
-[What](#what) • [Quick Start](#quick-start) • [Usage](#usage) • [Rules](#all-rules) • [Types](#doc-types) • [Structure](#structure)
+[What](#what) • [Install](#install) • [Quick Start](#quick-start) • [Usage](#usage) • [Rules](#all-rules) • [Types](#doc-types)
 
 ---
 
 ## What
 
 A tiny CLI that validates markdown spec docs against rules embedded directly
-in the document. Requires Python 3.9+ (uses `list[str]` type hints). No external
-dependencies. Drop it in your project and your AI agent can use it immediately.
+in the document. No external dependencies. Drop it in your project and your AI
+agent can use it immediately.
 
 ## Why
 
@@ -28,29 +19,35 @@ sections, and blow past length limits. `docfence` lets you define the rules
 _inside the doc itself_ — per section or for the whole document — and catch
 issues before they compound.
 
+## Install
+
+```bash
+pip install -e .
+```
+
+After that, `docfence` is available globally — run it from any folder.
+
 ## Quick Start
 
 ```bash
-chmod +x docfence.py
-
 # scaffold a new doc
-python docfence.py new feature > docs/my-feature.md
+docfence new feature > docs/my-feature.md
 
 # validate one file
-python docfence.py validate docs/my-feature.md
+docfence validate docs/my-feature.md
 
 # validate a whole folder
-python docfence.py validate docs/
+docfence validate docs/
 
 # stamp a clean file with a timestamp
-python docfence.py stamp docs/my-feature.md
+docfence stamp docs/my-feature.md
 
 # list available types
-python docfence.py types
+docfence types
 ```
 
-> **Note:** Always run from the project root directory. `docfence.py` resolves
-> `core/` and `.docfence/types/` relative to the working directory.
+> **Note:** `docfence` looks for `.docfence/types/` relative to the target
+> path. Run `validate` from your project root so type definitions are found.
 
 ## How it Works
 
@@ -89,7 +86,7 @@ We will build background jobs. TODO add progress tracking.
 </details>
 
 ```bash
-$ python docfence.py validate sample-docs/
+$ docfence validate sample-docs/
 
 sample-docs/
 ├── ✗ bad-feature.md
@@ -110,42 +107,18 @@ sample-docs/
 4 files  5 errors  1 warning
 ```
 
-## Structure
-
-```shell
-my-project/
-├── docfence.py              # CLI entry point
-├── core/
-│   ├── loader.py             # parses .md → frontmatter + spec blocks
-│   ├── rules.py              # built-in rule functions
-│   ├── types.py              # loads type definitions
-│   └── validator.py          # orchestrates everything
-├── .docfence/
-│   └── types/                # drop a .toml here to define a new doc type
-│       ├── feature.toml
-│       ├── exploration.toml
-│       └── research.toml
-└── docs/
-    ├── exploration/
-    │   └── E-001-market-research.md
-    ├── design/
-    │   └── D-001-user-flow.md
-    └── tasks/
-        └── T-001-auth.md
-```
-
 ## Usage
 
 ```shell
 docfence validate <file|folder>     # validate one file or all .md in folder
-docfence new <type>                 # print a blank template to stdout
-docfence types                      # list all available types
-docfence stamp <file>               # write last_validated timestamp (only if clean)
+docfence new <type>                # print a blank template to stdout
+docfence types                     # list all available types
+docfence stamp <file>              # write last_validated timestamp (only if clean)
 ```
 
 ## Doc Types
 
-Built-in: `story` `task` `feature` `design` `exploration` `research`
+Built-in fallback: `story` `task` `feature` `design` `exploration` `research`
 `persona` `pov` `brainstorm` `roadmap` `flow` `wireframe` `prototype`
 `test` `brand` `handoff`
 
@@ -162,14 +135,12 @@ banned_words = ["TODO", "TBD"]
 ```
 
 No core changes needed. `docfence types` will pick it up automatically.
-When custom types exist, built-in fallback types are hidden — only your
-`.docfence/types/` definitions are listed.
 
 ## Spec Block Syntax
 
 Place ` ```spec ``` ` fences in your markdown to embed validation rules inline.
 
-**Section-level block** — rules apply to the text that follows the block:
+**Section-level** — rules apply to the text that follows the block:
 
 ````markdown
 ```spec
@@ -184,7 +155,7 @@ Your content here...
 - src/auth/login.py
 ````
 
-**Document-wide block** — rules apply to the whole file (put near the top):
+**Document-wide** — rules apply to the whole file (put near the top):
 
 ````markdown
 ```spec
@@ -192,7 +163,6 @@ scope: document
 type: feature
 required_sections: [Overview, Acceptance Criteria]
 max_chars: 5000
-banned_words: [TBD]
 ```
 ````
 
@@ -219,33 +189,15 @@ match:
 ```
 ````
 
-Each `label: pattern` entry must match at least one line in the sibling text.
-Use `(?i)` prefix for case-insensitive matching. Errors reference the label,
-making them readable in AI agent output.
-
-## Frontmatter Fields
-
-Every doc should start with:
-
-```yaml
----
-id: F-001
-type: feature
-status: draft
-owner: human # human or ai — lets you apply stricter checks to AI content
-depends_on: [D-001]
-last_validated: ~ # written by `docfence stamp`
----
-```
+Each `label: pattern` entry must match at least one line. Use `(?i)` for
+case-insensitive matching. Errors reference the label, not the raw regex.
 
 ## Warnings vs Errors
 
 - **✗ ERR** — rule violation; `stamp` is blocked until fixed
-- **⚠ WARN** — e.g. a spec block inherits rules from the type definition instead
-  of declaring them explicitly; worth reviewing but not a blocker
+- **⚠ WARN** — inherited defaults or unknown type; worth reviewing, not a blocker
 
 ## Block IDs
 
-Each spec block gets a `bid` (8-char sha256 of its sibling text) computed at
-parse time. If content changes between runs the bid changes — useful for your
-AI agent to detect drift in sections it wrote.
+Each spec block gets a `bid` (8-char sha256 of its sibling text). If content
+changes between runs, the bid changes — useful for AI agents to detect drift.

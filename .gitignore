@@ -7,3 +7,4 @@ Pi
 __pycache__/
 *.pyc
 **/.DS_Store
+docfence.egg-info/

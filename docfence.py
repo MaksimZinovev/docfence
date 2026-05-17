@@ -38,8 +38,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
-
 from core.loader import load_doc
 from core.types import load_types
 from core.validator import validate_path, Issue
