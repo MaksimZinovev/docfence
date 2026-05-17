@@ -7,6 +7,7 @@ value   — the rule's configured value from the spec block
 cfg     — the full parsed spec block dict (for cross-rule context)
 """
 
+import re
 import urllib.request
 from pathlib import Path
 
@@ -56,10 +57,42 @@ def rule_required_sections(text: str, value: list[str], cfg: dict) -> list[str]:
     return errors
 
 
+def rule_match(text: str, value: list[dict], cfg: dict) -> list[str]:
+    """
+    Check that at least one line in sibling text matches each named pattern.
+
+    value is a list of single-key dicts: [{label: pattern}, ...]
+    Each pattern must match at least one line — if not, a clear error names the label.
+
+    Example spec block:
+      match:
+        - data_point: "^\\- .{30,}$"
+        - source_link: "Source: https?://.+"
+        - insight: "^(Users|Customers|People) .{20,}$"
+    """
+    errors = []
+    lines = text.splitlines()
+    for entry in value:
+        if not isinstance(entry, dict):
+            continue
+        for label, pattern in entry.items():
+            try:
+                compiled = re.compile(pattern, re.MULTILINE)
+            except re.error as e:
+                errors.append(f"match '{label}': invalid regex — {e}")
+                continue
+            if not any(compiled.search(line) for line in lines):
+                errors.append(
+                    f"match '{label}': no line matched pattern /{pattern}/"
+                )
+    return errors
+
+
 # Registry maps spec block field names to rule functions
 RULES: dict[str, callable] = {
     "max_chars": rule_max_chars,
     "banned_words": rule_banned_words,
     "validate": rule_validate,
     "required_sections": rule_required_sections,
+    "match": rule_match,
 }

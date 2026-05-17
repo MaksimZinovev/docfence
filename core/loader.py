@@ -11,24 +11,56 @@ from pathlib import Path
 
 
 def _parse_kv(text: str) -> dict:
-    """Parse simple 'key: value' lines into a dict. Shared by frontmatter and spec blocks."""
+    """
+    Parse 'key: value' lines into a dict.
+    Supports:
+      - scalar:     key: value
+      - inline list: key: [a, b, c]
+      - sub-block:  key:\n  subkey: value   → key = {subkey: value, ...}
+    """
     data: dict = {}
-    for line in text.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            i += 1
             continue
-        if ":" not in line:
+        if ":" not in stripped:
+            i += 1
             continue
-        k, _, v = line.partition(":")
+        k, _, v = stripped.partition(":")
+        k = k.strip()
         v = v.strip()
-        if v.startswith("[") and v.endswith("]"):
+
+        if v == "":
+            # possible sub-block: collect indented lines that follow
+            sub_lines = []
+            while i + 1 < len(lines) and lines[i + 1].startswith("  "):
+                i += 1
+                sub_lines.append(lines[i].strip())
+            if sub_lines:
+                # parse each "  label: pattern" into a list of {label, pattern} dicts
+                pairs = []
+                for sl in sub_lines:
+                    if ":" in sl:
+                        sk, _, sv = sl.partition(":")
+                        sv = sv.strip().strip('"').strip("'")
+                        pairs.append({sk.strip(): sv})
+                data[k] = pairs
+            else:
+                data[k] = None
+        elif v.startswith("[") and v.endswith("]"):
             inner = v[1:-1].strip()
-            v = [i.strip().strip('"').strip("'") for i in inner.split(",") if i.strip()] if inner else []
+            data[k] = [x.strip().strip('"').strip("'") for x in inner.split(",") if x.strip()] if inner else []
         elif v == "~":
-            v = None
+            data[k] = None
         elif v.isdigit():
-            v = int(v)
-        data[k.strip()] = v
+            data[k] = int(v)
+        else:
+            data[k] = v
+        i += 1
     return data
 
 
