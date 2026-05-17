@@ -2,6 +2,20 @@
 
 **Validate markdown specs from the inside out.**
 
+```bash
+ ▄▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄        ▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
+▐░░░░░░░░░░▌ ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░▌      ▐░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
+▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░▌░▌     ▐░▌▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ 
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░▌          ▐░▌          ▐░▌▐░▌    ▐░▌▐░▌          ▐░▌          
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░█▄▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄▄▄ ▐░▌ ▐░▌   ▐░▌▐░▌          ▐░█▄▄▄▄▄▄▄▄▄ 
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌  ▐░▌  ▐░▌▐░▌          ▐░░░░░░░░░░░▌
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░▌   ▐░▌ ▐░▌▐░▌          ▐░█▀▀▀▀▀▀▀▀▀ 
+▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░▌          ▐░▌          ▐░▌    ▐░▌▐░▌▐░▌          ▐░▌          
+▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄▄▄ ▐░▌          ▐░█▄▄▄▄▄▄▄▄▄ ▐░▌     ▐░▐░▌▐░█▄▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄▄▄ 
+▐░░░░░░░░░░▌ ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌          ▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
+ ▀▀▀▀▀▀▀▀▀▀   ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀            ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
+```
+
 [What](#what) • [Quick Start](#quick-start) • [Usage](#usage) • [Rules](#all-rules) • [Types](#doc-types) • [Structure](#structure)
 
 ---
@@ -66,7 +80,6 @@ max_chars: 500
 banned_words: [TODO, TBD]
 ```
 
-
 We want to let users export data. TODO: figure out formats. TBD for now.
 
 ```spec
@@ -75,8 +88,7 @@ max_chars: 200
 banned_words: [TODO, TBD]
 ```
 
-We will build background jobs. TODO add progress tracking.  
-
+We will build background jobs. TODO add progress tracking.
 ````
 
 </details>
@@ -164,8 +176,7 @@ Place ` ```spec ``` ` fences in your markdown to embed validation rules inline.
 
 **Section-level block** — rules apply to the text that follows the block:
 
-````markdown  
-
+````markdown
 ```spec
 type: feature
 max_chars: 800
@@ -175,7 +186,7 @@ validate: [file_exists]
 
 Your content here...
 
-- src/auth/login.py  
+- src/auth/login.py
 ````
 
 **Document-wide block** — rules apply to the whole file (put near the top):
@@ -192,14 +203,14 @@ banned_words: [TBD]
 
 ## All Rules
 
-| field                     | example                         | what it checks                                 |
-| ------------------------- | ------------------------------- | ---------------------------------------------- |
-| `max_chars`               | `max_chars: 800`                | sibling text must be shorter                   |
-| `banned_words`            | `banned_words: [TODO, TBD]`     | none of these appear in sibling text           |
-| `match`                   | `match:` + indented `label: "regex"` | at least one line matches each named pattern |
-| `validate: [file_exists]` |                                 | every line in sibling text is a real path      |
-| `validate: [valid_url]`   |                                 | every `http` line in sibling text is reachable |
-| `required_sections`       | `required_sections: [Overview]` | document-scope only; heading must exist        |
+| field                     | example                              | what it checks                                 |
+| ------------------------- | ------------------------------------ | ---------------------------------------------- |
+| `max_chars`               | `max_chars: 800`                     | sibling text must be shorter                   |
+| `banned_words`            | `banned_words: [TODO, TBD]`          | none of these appear in sibling text           |
+| `match`                   | `match:` + indented `label: "regex"` | at least one line matches each named pattern   |
+| `validate: [file_exists]` |                                      | every line in sibling text is a real path      |
+| `validate: [valid_url]`   |                                      | every `http` line in sibling text is reachable |
+| `required_sections`       | `required_sections: [Overview]`      | document-scope only; heading must exist        |
 
 **`match` example:**
 
