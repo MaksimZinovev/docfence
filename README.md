@@ -1,4 +1,4 @@
-# speccheck
+# Docfence
 
 **Validate markdown specs from the inside out.**
 
