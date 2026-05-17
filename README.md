@@ -3,8 +3,8 @@
 ## What
 
 A tiny CLI that validates markdown spec docs against rules embedded directly
-in the document. No external dependencies beyond Python 3.12. Drop it in your
-project and your AI agent can use it immediately.
+in the document. Requires Python 3.9+ (uses `list[str]` type hints). No external
+dependencies. Drop it in your project and your AI agent can use it immediately.
 
 ## Why
 
@@ -33,6 +33,9 @@ python speccheck.py stamp docs/my-feature.md
 # list available types
 python speccheck.py types
 ```
+
+> **Note:** Always run from the project root directory. `speccheck.py` resolves
+> `core/` and `.speccheck/types/` relative to the working directory.
 
 ## Structure
 
@@ -86,6 +89,8 @@ banned_words = ["TODO", "TBD"]
 ```
 
 No core changes needed. `speccheck types` will pick it up automatically.
+When custom types exist, built-in fallback types are hidden — only your
+`.speccheck/types/` definitions are listed.
 
 ## Spec Block Syntax
 
