@@ -1,6 +1,7 @@
 # speccheck
 
 ## What
+
 A tiny CLI that validates markdown spec docs against rules embedded directly
 in the document. Requires Python 3.9+ (uses `list[str]` type hints). No external
 dependencies. Drop it in your project and your AI agent can use it immediately.
@@ -9,7 +10,7 @@ dependencies. Drop it in your project and your AI agent can use it immediately.
 
 AI assistants drift. They sneak in TODOs, break links, forget required
 sections, and blow past length limits. `speccheck` lets you define the rules
-*inside the doc itself* — per section or for the whole document — and catch
+_inside the doc itself_ — per section or for the whole document — and catch
 issues before they compound.
 
 ## Quick Start
@@ -37,10 +38,11 @@ python speccheck.py types
 > `core/` and `.speccheck/types/` relative to the working directory.
 
 ## How it Works
+
 <details>
 <summary>📄 See sample doc — bad-feature.md (has errors)</summary>
 
-```markdown
+````markdown
 ---
 id: F-002
 type: feature
@@ -49,6 +51,7 @@ owner:
 depends_on: []
 last_validated: ~
 ---
+
 ```spec
 scope: document
 type: feature
@@ -56,15 +59,22 @@ required_sections: [Overview, Implementation]
 max_chars: 500
 banned_words: [TODO, TBD]
 ```
+
+
 We want to let users export data. TODO: figure out formats. TBD for now.
+
 ```spec
 type: feature
 max_chars: 200
 banned_words: [TODO, TBD]
 ```
-We will build background jobs. TODO add progress tracking.
-```
+
+We will build background jobs. TODO add progress tracking.  
+
+````
+
 </details>
+
 ```bash
 $ python speccheck.py validate sample-docs/bad-feature.md    # 5 errors caught
 ERR  bad-feature.md:1 — frontmatter missing required field 'owner' for type 'feature'
@@ -79,7 +89,7 @@ feature  exploration
 
 ## Structure
 
-```
+```shell
 my-project/
 ├── speccheck.py              # CLI entry point
 ├── core/
@@ -103,11 +113,11 @@ my-project/
 
 ## Usage
 
-```
-speccheck validate <file|folder>   validate one file or all .md in folder
-speccheck new <type>               print a blank template to stdout
-speccheck types                    list all available types
-speccheck stamp <file>             write last_validated timestamp (only if clean)
+```shell
+speccheck validate <file|folder>     # validate one file or all .md in folder
+speccheck new <type>                 # print a blank template to stdout
+speccheck types                      # list all available types
+speccheck stamp <file>               # write last_validated timestamp (only if clean)
 ```
 
 ## Doc Types
@@ -138,7 +148,8 @@ Place ` ```spec ``` ` fences in your markdown to embed validation rules inline.
 
 **Section-level block** — rules apply to the text that follows the block:
 
-````markdown
+````markdown  
+
 ```spec
 type: feature
 max_chars: 800
@@ -147,7 +158,8 @@ validate: [file_exists]
 ```
 
 Your content here...
-- src/auth/login.py
+
+- src/auth/login.py  
 ````
 
 **Document-wide block** — rules apply to the whole file (put near the top):
@@ -164,13 +176,13 @@ banned_words: [TBD]
 
 ## All Rules
 
-| field | example | what it checks |
-|---|---|---|
-| `max_chars` | `max_chars: 800` | sibling text must be shorter |
-| `banned_words` | `banned_words: [TODO, TBD]` | none of these appear in sibling text |
-| `validate: [file_exists]` | | every line in sibling text is a real path |
-| `validate: [valid_url]` | | every `http` line in sibling text is reachable |
-| `required_sections` | `required_sections: [Overview]` | document-scope only; heading must exist |
+| field                     | example                         | what it checks                                 |
+| ------------------------- | ------------------------------- | ---------------------------------------------- |
+| `max_chars`               | `max_chars: 800`                | sibling text must be shorter                   |
+| `banned_words`            | `banned_words: [TODO, TBD]`     | none of these appear in sibling text           |
+| `validate: [file_exists]` |                                 | every line in sibling text is a real path      |
+| `validate: [valid_url]`   |                                 | every `http` line in sibling text is reachable |
+| `required_sections`       | `required_sections: [Overview]` | document-scope only; heading must exist        |
 
 ## Frontmatter Fields
 
@@ -181,9 +193,9 @@ Every doc should start with:
 id: F-001
 type: feature
 status: draft
-owner: human          # human or ai — lets you apply stricter checks to AI content
+owner: human # human or ai — lets you apply stricter checks to AI content
 depends_on: [D-001]
-last_validated: ~     # written by `speccheck stamp`
+last_validated: ~ # written by `speccheck stamp`
 ---
 ```
 
