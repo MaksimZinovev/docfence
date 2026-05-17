@@ -46,26 +46,29 @@ from core.validator import validate_path, Issue
 
 # ── colors ───────────────────────────────────────────────────────────────────
 
-RED    = "\033[31m"
+RED = "\033[31m"
 YELLOW = "\033[33m"
-GREEN  = "\033[32m"
-BOLD   = "\033[1m"
-RESET  = "\033[0m"
+GREEN = "\033[32m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
 
 _use_color = sys.stdout.isatty()
+
 
 def c(text: str, *codes: str) -> str:
     if not _use_color:
         return text
     return "".join(codes) + text + RESET
 
+
 # ── tree renderer ─────────────────────────────────────────────────────────────
+
 
 def _render_tree(issues: list[Issue], target: Path):
     """Render issues as a tree grouped by file, then source (frontmatter / spec block)."""
     files = list(target.rglob("*.md")) if target.is_dir() else [target]
     errors = [i for i in issues if i.level == "error"]
-    warns  = [i for i in issues if i.level == "warn"]
+    warns = [i for i in issues if i.level == "warn"]
 
     # group issues by file
     by_file: dict[Path, list[Issue]] = {}
@@ -91,7 +94,7 @@ def _render_tree(issues: list[Issue], target: Path):
         is_last_file = idx == len(ordered_files) - 1
         file_issues = by_file.get(fpath, [])
         file_errors = [i for i in file_issues if i.level == "error"]
-        file_warns  = [i for i in file_issues if i.level == "warn"]
+        file_warns = [i for i in file_issues if i.level == "warn"]
 
         if file_errors:
             tag = c("✗", RED, BOLD)
@@ -113,10 +116,14 @@ def _render_tree(issues: list[Issue], target: Path):
         doc_type = doc.frontmatter.get("type", "") if doc else ""
         for i in file_issues:
             if i.line == 1 and i.rule in ("frontmatter", "status"):
-                key = f"L1 frontmatter (type: {doc_type})" if doc_type else "L1 frontmatter"
+                key = (
+                    f"L1 frontmatter (type: {doc_type})"
+                    if doc_type
+                    else "L1 frontmatter"
+                )
             else:
                 scope = ""
-                for blk in (doc.blocks if doc else []):
+                for blk in doc.blocks if doc else []:
                     if blk.line_number == i.line:
                         parts = []
                         if blk.cfg.get("type"):
@@ -164,13 +171,32 @@ def _render_tree(issues: list[Issue], target: Path):
 
 # ── templates ────────────────────────────────────────────────────────────────
 
+
 def _load_types_list(start: Path) -> list[str]:
     registry = load_types(start)
-    return sorted(registry.keys()) if registry else [
-        "story", "task", "feature", "design", "exploration",
-        "research", "persona", "pov", "brainstorm", "roadmap",
-        "flow", "wireframe", "prototype", "test", "brand", "handoff",
-    ]
+    return (
+        sorted(registry.keys())
+        if registry
+        else [
+            "story",
+            "task",
+            "feature",
+            "design",
+            "exploration",
+            "research",
+            "persona",
+            "pov",
+            "brainstorm",
+            "roadmap",
+            "flow",
+            "wireframe",
+            "prototype",
+            "test",
+            "brand",
+            "handoff",
+        ]
+    )
+
 
 def _template(doc_type: str) -> str:
     return f"""\
@@ -204,7 +230,9 @@ banned_words: [TODO, TBD, placeholder]
 Your content here.
 """
 
+
 # ── commands ─────────────────────────────────────────────────────────────────
+
 
 def cmd_validate(target: str):
     p = Path(target)
@@ -254,6 +282,7 @@ def cmd_stamp(target: str):
 
 # ── entry ─────────────────────────────────────────────────────────────────────
 
+
 def main():
     args = sys.argv[1:]
     match args:
@@ -267,6 +296,7 @@ def main():
             cmd_stamp(target)
         case _:
             print(__doc__)
+
 
 if __name__ == "__main__":
     main()
