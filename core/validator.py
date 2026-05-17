@@ -13,9 +13,9 @@ For each spec block:
 from dataclasses import dataclass
 from pathlib import Path
 
-from core.loader import ParsedDoc, SpecBlock
-from core.types import TypeDef, load_types, resolve_type
+from core.loader import ParsedDoc
 from core.rules import RULES
+from core.types import load_types, resolve_type
 
 NON_RULE_KEYS = {"type", "scope", "bid", "status", "owner", "depends_on", "_parse_error"}
 
@@ -25,7 +25,9 @@ class Issue:
     path: Path
     line: int
     level: str   # "error" or "warn"
-    message: str
+    rule: str = ""     # e.g. "banned_words", "status", "frontmatter"
+    message: str = ""
+    context: str = ""  # e.g. "allowed: draft, active, frozen, done"
 
     def __str__(self):
         tag = "ERR " if self.level == "error" else "WARN"
@@ -42,22 +44,22 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
     if typedef:
         for field in typedef.required_fields:
             if field not in doc.frontmatter or doc.frontmatter[field] in (None, "", []):
-                issues.append(Issue(doc.path, 1, "error",
-                    f"frontmatter missing required field '{field}' for type '{typedef.name}'"))
+                issues.append(Issue(doc.path, 1, "error", rule="frontmatter",
+                    message=f"missing required field '{field}' for type '{typedef.name}'"))
         status = doc.frontmatter.get("status", "")
         if status and status not in typedef.statuses:
-            issues.append(Issue(doc.path, 1, "error",
-                f"status '{status}' not valid for type '{typedef.name}' "
-                f"(allowed: {', '.join(typedef.statuses)})"))
+            issues.append(Issue(doc.path, 1, "error", rule="status",
+                message=f"'{status}' not valid for type '{typedef.name}'",
+                context=f"allowed: {', '.join(typedef.statuses)}"))
     elif doc_type_name:
-        issues.append(Issue(doc.path, 1, "warn",
-            f"unknown type '{doc_type_name}' — no definition found in .speccheck/types/"))
+        issues.append(Issue(doc.path, 1, "warn", rule="frontmatter",
+            message=f"unknown type '{doc_type_name}' — no definition found in .speccheck/types/"))
 
     # --- spec block checks ---
     for block in doc.blocks:
         if "_parse_error" in block.cfg:
-            issues.append(Issue(doc.path, block.line_number, "error",
-                f"spec block parse error — {block.cfg['_parse_error']}"))
+            issues.append(Issue(doc.path, block.line_number, "error", rule="parse",
+                message=f"spec block parse error — {block.cfg['_parse_error']}"))
             continue
 
         block_type_name = block.cfg.get("type", doc_type_name)
@@ -76,8 +78,8 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
                 inherited.append(rule_key)
 
         if inherited:
-            issues.append(Issue(doc.path, block.line_number, "warn",
-                f"block uses inherited defaults for: {', '.join(inherited)} "
+            issues.append(Issue(doc.path, block.line_number, "warn", rule="inherited",
+                message=f"uses inherited defaults for: {', '.join(inherited)} "
                 f"(from type '{block_type_name}') — consider making them explicit"))
 
         # run rules
@@ -85,7 +87,8 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
             fn = RULES.get(rule_key)
             if fn:
                 for msg in fn(block.sibling_text, rule_value, block.cfg):
-                    issues.append(Issue(doc.path, block.line_number, "error", msg))
+                    issues.append(Issue(doc.path, block.line_number, "error", rule=rule_key,
+                        message=msg))
 
     return issues
 
