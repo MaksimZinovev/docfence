@@ -1,5 +1,11 @@
 # speccheck
 
+**Validate markdown specs from the inside out.**
+
+[What](#what) • [Quick Start](#quick-start) • [Usage](#usage) • [Rules](#all-rules) • [Types](#doc-types) • [Structure](#structure)
+
+---
+
 ## What
 
 A tiny CLI that validates markdown spec docs against rules embedded directly
@@ -76,15 +82,25 @@ We will build background jobs. TODO add progress tracking.
 </details>
 
 ```bash
-$ python speccheck.py validate sample-docs/bad-feature.md    # 5 errors caught
-ERR  bad-feature.md:1 — frontmatter missing required field 'owner' for type 'feature'
-ERR  bad-feature.md:1 — status 'brainstorm' not valid for type 'feature'
-ERR  bad-feature.md:4 — banned word 'TODO' found
-... +2 more errors
-$ python speccheck.py validate sample-docs/good-feature.md    # clean ✓
-✓  1 file(s) clean
-$ python speccheck.py types  # custom types override built-ins
-feature  exploration
+$ python speccheck.py validate sample-docs/
+
+sample-docs/
+├── ✗ bad-feature.md
+│   ├── L1 frontmatter (type: feature)
+│   │   ├── ✗ frontmatter: missing required field 'owner'
+│   │   └── ✗ status: 'brainstorm' not valid → allowed: draft, active, frozen, done
+│   ├── L4 spec block (type: feature, scope: document)
+│   │   ├── ✗ banned_words: 'TODO' found in content
+│   │   └── ✗ banned_words: 'TBD' found in content
+│   └── L18 spec block (type: feature)
+│       └── ✗ banned_words: 'TODO' found in content
+├── ✓ exploration-auth.md
+├── ✓ good-feature.md
+└── ⚠ test-match.md
+    └── L18 spec block (type: feature)
+        └── ⚠ inherited: uses inherited defaults for banned_words
+
+4 files  5 errors  1 warning
 ```
 
 ## Structure
@@ -180,9 +196,26 @@ banned_words: [TBD]
 | ------------------------- | ------------------------------- | ---------------------------------------------- |
 | `max_chars`               | `max_chars: 800`                | sibling text must be shorter                   |
 | `banned_words`            | `banned_words: [TODO, TBD]`     | none of these appear in sibling text           |
+| `match`                   | `match:` + indented `label: "regex"` | at least one line matches each named pattern |
 | `validate: [file_exists]` |                                 | every line in sibling text is a real path      |
 | `validate: [valid_url]`   |                                 | every `http` line in sibling text is reachable |
 | `required_sections`       | `required_sections: [Overview]` | document-scope only; heading must exist        |
+
+**`match` example:**
+
+````markdown
+```spec
+type: feature
+max_chars: 1000
+match:
+  data_point: "^\\- .{30,}$"
+  source_link: "Source: https?://.+"
+```
+````
+
+Each `label: pattern` entry must match at least one line in the sibling text.
+Use `(?i)` prefix for case-insensitive matching. Errors reference the label,
+making them readable in AI agent output.
 
 ## Frontmatter Fields
 
@@ -201,8 +234,8 @@ last_validated: ~ # written by `speccheck stamp`
 
 ## Warnings vs Errors
 
-- **ERR** — rule violation; `stamp` is blocked until fixed
-- **WARN** — e.g. a spec block inherits rules from the type definition instead
+- **✗ ERR** — rule violation; `stamp` is blocked until fixed
+- **⚠ WARN** — e.g. a spec block inherits rules from the type definition instead
   of declaring them explicitly; worth reviewing but not a blocker
 
 ## Block IDs
