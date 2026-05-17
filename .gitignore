@@ -1,0 +1,9 @@
+Pi
+.pi/
+.pi-lens/
+.obsidian
+.ck
+.local
+__pycache__/
+*.pyc
+**/.DS_Store

@@ -1,0 +1,7 @@
+name = "exploration"
+statuses = ["draft", "active", "done"]
+required_fields = ["id", "status", "owner", "depends_on"]
+
+[defaults]
+max_chars = 5000
+banned_words = ["TODO", "TBD"]
