@@ -3,17 +3,12 @@
 **Validate markdown specs from the inside out.**
 
 ```bash
- ▄▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄        ▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
-▐░░░░░░░░░░▌ ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░▌      ▐░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
-▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░▌░▌     ▐░▌▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ 
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░▌          ▐░▌          ▐░▌▐░▌    ▐░▌▐░▌          ▐░▌          
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░█▄▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄▄▄ ▐░▌ ▐░▌   ▐░▌▐░▌          ▐░█▄▄▄▄▄▄▄▄▄ 
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌  ▐░▌  ▐░▌▐░▌          ▐░░░░░░░░░░░▌
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░▌   ▐░▌ ▐░▌▐░▌          ▐░█▀▀▀▀▀▀▀▀▀ 
-▐░▌       ▐░▌▐░▌       ▐░▌▐░▌          ▐░▌          ▐░▌          ▐░▌    ▐░▌▐░▌▐░▌          ▐░▌          
-▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄█░▌▐░█▄▄▄▄▄▄▄▄▄ ▐░▌          ▐░█▄▄▄▄▄▄▄▄▄ ▐░▌     ▐░▐░▌▐░█▄▄▄▄▄▄▄▄▄ ▐░█▄▄▄▄▄▄▄▄▄ 
-▐░░░░░░░░░░▌ ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌          ▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
- ▀▀▀▀▀▀▀▀▀▀   ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀            ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
+██████╗  ██████╗  ██████╗███████╗███████╗███╗   ██╗ ██████╗███████╗
+██╔══██╗██╔═══██╗██╔════╝██╔════╝██╔════╝████╗  ██║██╔════╝██╔════╝
+██║  ██║██║   ██║██║     █████╗  █████╗  ██╔██╗ ██║██║     █████╗  
+██║  ██║██║   ██║██║     ██╔══╝  ██╔══╝  ██║╚██╗██║██║     ██╔══╝  
+██████╔╝╚██████╔╝╚██████╗██║     ███████╗██║ ╚████║╚██████╗███████╗
+╚═════╝  ╚═════╝  ╚═════╝╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
 ```
 
 [What](#what) • [Quick Start](#quick-start) • [Usage](#usage) • [Rules](#all-rules) • [Types](#doc-types) • [Structure](#structure)
@@ -29,33 +24,33 @@ dependencies. Drop it in your project and your AI agent can use it immediately.
 ## Why
 
 AI assistants drift. They sneak in TODOs, break links, forget required
-sections, and blow past length limits. `speccheck` lets you define the rules
+sections, and blow past length limits. `docfence` lets you define the rules
 _inside the doc itself_ — per section or for the whole document — and catch
 issues before they compound.
 
 ## Quick Start
 
 ```bash
-chmod +x speccheck.py
+chmod +x docfence.py
 
 # scaffold a new doc
-python speccheck.py new feature > docs/my-feature.md
+python docfence.py new feature > docs/my-feature.md
 
 # validate one file
-python speccheck.py validate docs/my-feature.md
+python docfence.py validate docs/my-feature.md
 
 # validate a whole folder
-python speccheck.py validate docs/
+python docfence.py validate docs/
 
 # stamp a clean file with a timestamp
-python speccheck.py stamp docs/my-feature.md
+python docfence.py stamp docs/my-feature.md
 
 # list available types
-python speccheck.py types
+python docfence.py types
 ```
 
-> **Note:** Always run from the project root directory. `speccheck.py` resolves
-> `core/` and `.speccheck/types/` relative to the working directory.
+> **Note:** Always run from the project root directory. `docfence.py` resolves
+> `core/` and `.docfence/types/` relative to the working directory.
 
 ## How it Works
 
@@ -94,7 +89,7 @@ We will build background jobs. TODO add progress tracking.
 </details>
 
 ```bash
-$ python speccheck.py validate sample-docs/
+$ python docfence.py validate sample-docs/
 
 sample-docs/
 ├── ✗ bad-feature.md
@@ -119,13 +114,13 @@ sample-docs/
 
 ```shell
 my-project/
-├── speccheck.py              # CLI entry point
+├── docfence.py              # CLI entry point
 ├── core/
 │   ├── loader.py             # parses .md → frontmatter + spec blocks
 │   ├── rules.py              # built-in rule functions
 │   ├── types.py              # loads type definitions
 │   └── validator.py          # orchestrates everything
-├── .speccheck/
+├── .docfence/
 │   └── types/                # drop a .toml here to define a new doc type
 │       ├── feature.toml
 │       ├── exploration.toml
@@ -142,10 +137,10 @@ my-project/
 ## Usage
 
 ```shell
-speccheck validate <file|folder>     # validate one file or all .md in folder
-speccheck new <type>                 # print a blank template to stdout
-speccheck types                      # list all available types
-speccheck stamp <file>               # write last_validated timestamp (only if clean)
+docfence validate <file|folder>     # validate one file or all .md in folder
+docfence new <type>                 # print a blank template to stdout
+docfence types                      # list all available types
+docfence stamp <file>               # write last_validated timestamp (only if clean)
 ```
 
 ## Doc Types
@@ -154,7 +149,7 @@ Built-in: `story` `task` `feature` `design` `exploration` `research`
 `persona` `pov` `brainstorm` `roadmap` `flow` `wireframe` `prototype`
 `test` `brand` `handoff`
 
-**Adding a new type** — create `.speccheck/types/mytype.toml`:
+**Adding a new type** — create `.docfence/types/mytype.toml`:
 
 ```toml
 name = "mytype"
@@ -166,9 +161,9 @@ max_chars = 1500
 banned_words = ["TODO", "TBD"]
 ```
 
-No core changes needed. `speccheck types` will pick it up automatically.
+No core changes needed. `docfence types` will pick it up automatically.
 When custom types exist, built-in fallback types are hidden — only your
-`.speccheck/types/` definitions are listed.
+`.docfence/types/` definitions are listed.
 
 ## Spec Block Syntax
 
@@ -239,7 +234,7 @@ type: feature
 status: draft
 owner: human # human or ai — lets you apply stricter checks to AI content
 depends_on: [D-001]
-last_validated: ~ # written by `speccheck stamp`
+last_validated: ~ # written by `docfence stamp`
 ---
 ```
 

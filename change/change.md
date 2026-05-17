@@ -3,7 +3,7 @@
 ## Target
 
 ```
-$ speccheck validate sample-docs/
+$ docfence validate sample-docs/
 sample-docs/
 ├── ✓ good-feature.md
 ├── ⚠ test-match.md
@@ -50,7 +50,7 @@ Issues.append(Issue(..., rule="status", message=f"'{status}' not valid", context
 Issues.append(Issue(..., rule=rule_key, message=msg))
 ```
 
-### 3. `speccheck.py` — `cmd_validate` renders tree instead of line-by-line
+### 3. `docfence.py` — `cmd_validate` renders tree instead of line-by-line
 
 - Group issues by file, then by source (frontmatter / spec block)
 - Print `├──`/`└──`/`│` tree

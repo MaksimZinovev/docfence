@@ -80,7 +80,7 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
                 1,
                 "warn",
                 rule="frontmatter",
-                message=f"unknown type '{doc_type_name}' — no definition found in .speccheck/types/",
+                message=f"unknown type '{doc_type_name}' — no definition found in .docfence/types/",
             )
         )
 

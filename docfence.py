@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-speccheck — validate markdown spec docs with inline and type-level rules.
+docfence — validate markdown spec docs with inline and type-level rules.
 
 Usage examples:
-  speccheck validate notes/my-feature.md     # validate one file
-  speccheck validate docs/                   # validate all .md in folder
-  speccheck new feature                      # print a blank template
-  speccheck types                            # list all known doc types
-  speccheck stamp docs/my-feature.md         # write last_validated timestamp
+  docfence validate notes/my-feature.md     # validate one file
+  docfence validate docs/                   # validate all .md in folder
+  docfence new feature                      # print a blank template
+  docfence types                            # list all known doc types
+  docfence stamp docs/my-feature.md         # write last_validated timestamp
 
 Spec block syntax (place inside ```spec ... ``` fences in your .md):
 
@@ -29,8 +29,8 @@ Document-wide spec block (applies rules to the whole file):
   max_chars: 5000
   ```
 
-Type definitions live in .speccheck/types/<name>.toml — drop a new file to add
-a type without touching speccheck core.
+Type definitions live in .docfence/types/<name>.toml — drop a new file to add
+a type without touching docfence core.
 """
 
 import re
@@ -249,14 +249,14 @@ def cmd_validate(target: str):
 def cmd_new(doc_type: str):
     known = _load_types_list(Path.cwd())
     if doc_type not in known:
-        print(f"Unknown type '{doc_type}'. Run: speccheck types")
+        print(f"Unknown type '{doc_type}'. Run: docfence types")
         sys.exit(1)
     print(_template(doc_type))
 
 
 def cmd_types():
     known = _load_types_list(Path.cwd())
-    print("Available doc types (from .speccheck/types/ + built-ins):\n")
+    print("Available doc types (from .docfence/types/ + built-ins):\n")
     for t in known:
         print(f"  {t}")
 

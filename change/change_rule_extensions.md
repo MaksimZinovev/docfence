@@ -4,12 +4,12 @@ Three layers of extensibility, from simple to full:
 
 ---
 
-**Layer 1 — Python plugin files in `.speccheck/rules/`**
+**Layer 1 — Python plugin files in `.docfence/rules/`**
 
-Drop a `.py` file in `.speccheck/rules/`, speccheck loads it at startup and calls a `register(rules: dict)` function if it exists:
+Drop a `.py` file in `.docfence/rules/`, docfence loads it at startup and calls a `register(rules: dict)` function if it exists:
 
 ```python
-# .speccheck/rules/section_check.py
+# .docfence/rules/section_check.py
 
 import re
 
@@ -29,7 +29,7 @@ No core changes to add a rule. Your agent can write and drop plugin files. Works
 Any function named `rule_*` in a plugin file gets auto-registered under its suffix — `rule_section` → `"section"`. No `register()` boilerplate needed:
 
 ```python
-# .speccheck/rules/my_rules.py
+# .docfence/rules/my_rules.py
 
 def rule_section(text, value, cfg): ...
 def rule_min_chars(text, value, cfg): ...
@@ -47,7 +47,7 @@ A type definition can reference a rule file path directly:
 ```toml
 # research.toml
 [rules]
-section = ".speccheck/rules/section_check.py::rule_section"
+section = ".docfence/rules/section_check.py::rule_section"
 ```
 
 The rule travels with the type, not globally. Best for rules that only make sense for one doc type.
@@ -55,4 +55,3 @@ The rule travels with the type, not globally. Best for rules that only make sens
 ---
 
 **My recommendation for your setup:** Layer 1 + Layer 2 combined — auto-discover `rule_*` functions but also allow an explicit `register()` for rules that need a custom name. Layer 3 is useful later when your type definitions get richer.
-

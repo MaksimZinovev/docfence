@@ -16,12 +16,12 @@ adapters/
 └── shell.py            # generic: any cli tool that reads stdin, writes stdout
                         # fallback for custom or local providers (ollama, llm, etc)
 
-.speccheck/
+.docfence/
 └── config.toml         # adapter config — which provider, which model, any flags
 ```
 
 ```toml
-# .speccheck/config.toml
+# .docfence/config.toml
 [llm]
 adapter = "anthropic"       # which adapter to use
 model = "claude-sonnet-4"   # passed as a flag to the cli tool
@@ -92,12 +92,12 @@ def run_llm_validator(
 
 ---
 
-**`speccheck.py` — revised `cmd_review`:**
+**`docfence.py` — revised `cmd_review`:**
 
 ```python
 def cmd_review(target: str):
     """
-    Loads .speccheck/config.toml, resolves adapter via get_adapter(config),
+    Loads .docfence/config.toml, resolves adapter via get_adapter(config),
     passes adapter into run_llm_validator for each llm: block.
     Provider is fully swappable by changing one line in config.toml —
     no code changes needed.

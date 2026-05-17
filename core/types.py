@@ -1,5 +1,5 @@
 """
-Loads document type definitions from .speccheck/types/*.toml.
+Loads document type definitions from .docfence/types/*.toml.
 Falls back to a minimal built-in default if no definition exists.
 """
 
@@ -21,11 +21,11 @@ _FALLBACK = TypeDef(name="unknown")
 
 
 def find_types_dir(start: Path) -> Path | None:
-    """Walk up from start (and CWD) looking for .speccheck/types/."""
+    """Walk up from start (and CWD) looking for .docfence/types/."""
     search_roots = {start.resolve(), Path.cwd().resolve()}
     for root in search_roots:
         for parent in [root, *root.parents]:
-            candidate = parent / ".speccheck" / "types"
+            candidate = parent / ".docfence" / "types"
             if candidate.is_dir():
                 return candidate
     return None
