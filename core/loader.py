@@ -53,7 +53,11 @@ def _parse_kv(text: str) -> dict:
                 data[k] = None
         elif v.startswith("[") and v.endswith("]"):
             inner = v[1:-1].strip()
-            data[k] = [x.strip().strip('"').strip("'") for x in inner.split(",") if x.strip()] if inner else []
+            data[k] = (
+                [x.strip().strip('"').strip("'") for x in inner.split(",") if x.strip()]
+                if inner
+                else []
+            )
         elif v == "~":
             data[k] = None
         elif v.isdigit():
@@ -66,10 +70,10 @@ def _parse_kv(text: str) -> dict:
 
 @dataclass
 class SpecBlock:
-    cfg: dict                    # parsed TOML from inside the ```spec block
-    sibling_text: str            # content immediately following the block
-    scope: str                   # "document" or "section"
-    bid: str                     # sha256[:8] of sibling_text at parse time
+    cfg: dict  # parsed TOML from inside the ```spec block
+    sibling_text: str  # content immediately following the block
+    scope: str  # "document" or "section"
+    bid: str  # sha256[:8] of sibling_text at parse time
     line_number: int
     inherited_rules: list[str] = field(default_factory=list)  # rules from type defaults
 
@@ -78,8 +82,11 @@ class SpecBlock:
 class ParsedDoc:
     path: Path
     frontmatter: dict
-    full_text: str               # full raw markdown (for document-scope rules)
+    full_text: str  # full raw markdown (for document-scope rules)
     blocks: list[SpecBlock]
+    headings: dict[int, str] = field(
+        default_factory=dict
+    )  # line_number → heading text (H1, H2)
 
 
 def _sha8(text: str) -> str:
@@ -91,7 +98,17 @@ def _parse_frontmatter(text: str) -> tuple[dict, str]:
     match = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
     if not match:
         return {}, text
-    return _parse_kv(match.group(1)), text[match.end():]
+    return _parse_kv(match.group(1)), text[match.end() :]
+
+
+def _extract_headings(text: str) -> dict[int, str]:
+    """Extract H1/H2 headings with their line numbers."""
+    headings: dict[int, str] = {}
+    for i, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if stripped.startswith(("# ", "## ")):
+            headings[i] = stripped
+    return headings
 
 
 def _extract_spec_blocks(body: str) -> list[tuple[str, str, int]]:
@@ -107,7 +124,7 @@ def _extract_spec_blocks(body: str) -> list[tuple[str, str, int]]:
 
     for match in pattern.finditer(body):
         raw_toml = match.group(1)
-        after = body[match.end():]
+        after = body[match.end() :]
         next_block = re.search(r"```spec", after)
         sibling = after[: next_block.start()] if next_block else after
         sibling = sibling.strip()
@@ -126,8 +143,11 @@ def load_doc(path: Path) -> ParsedDoc | None:
         return None
 
     frontmatter, body = _parse_frontmatter(text)
+    headings = _extract_headings(text)
     raw_blocks = _extract_spec_blocks(body)
     blocks: list[SpecBlock] = []
+
+    _SPEC_BLOCK_RE = re.compile(r"```spec\n.*?```", re.DOTALL)
 
     for raw_toml, sibling, ln in raw_blocks:
         try:
@@ -137,15 +157,24 @@ def load_doc(path: Path) -> ParsedDoc | None:
         scope = cfg.get("scope", "section")
         if scope == "document":
             # strip all spec blocks from full text so their contents don't self-trigger rules
-            effective_sibling = re.sub(r"```spec\n.*?```", "", text, flags=re.DOTALL).strip()
+            effective_sibling = _SPEC_BLOCK_RE.sub("", text).strip()
         else:
-            effective_sibling = sibling
-        blocks.append(SpecBlock(
-            cfg=cfg,
-            sibling_text=effective_sibling,
-            scope=scope,
-            bid=_sha8(effective_sibling),
-            line_number=ln,
-        ))
+            # strip any nested spec block fences from sibling text
+            effective_sibling = _SPEC_BLOCK_RE.sub("", sibling).strip()
+        blocks.append(
+            SpecBlock(
+                cfg=cfg,
+                sibling_text=effective_sibling,
+                scope=scope,
+                bid=_sha8(effective_sibling),
+                line_number=ln,
+            )
+        )
 
-    return ParsedDoc(path=path, frontmatter=frontmatter, full_text=text, blocks=blocks)
+    return ParsedDoc(
+        path=path,
+        frontmatter=frontmatter,
+        full_text=text,
+        blocks=blocks,
+        headings=headings,
+    )

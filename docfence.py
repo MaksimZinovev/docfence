@@ -62,11 +62,27 @@ def c(text: str, *codes: str) -> str:
 # ── tree renderer ─────────────────────────────────────────────────────────────
 
 
-def _render_tree(issues: list[Issue], target: Path):
+def _nearest_heading(doc, line_number: int) -> str | None:
+    """Find the nearest H1/H2 heading above the given line."""
+    if not doc or not doc.headings:
+        return None
+    heading_lines = sorted(doc.headings.keys())
+    # find the last heading at or before line_number
+    best = None
+    for hl in heading_lines:
+        if hl <= line_number:
+            best = hl
+        else:
+            break
+    return doc.headings[best] if best else None
+
+
+def _render_tree(issues: list[Issue], target: Path, verbose: bool = False):
     """Render issues as a tree grouped by file, then source (frontmatter / spec block)."""
     files = list(target.rglob("*.md")) if target.is_dir() else [target]
     errors = [i for i in issues if i.level == "error"]
     warns = [i for i in issues if i.level == "warn"]
+    passes = [i for i in issues if i.level == "pass"]
 
     # group issues by file
     by_file: dict[Path, list[Issue]] = {}
@@ -112,6 +128,8 @@ def _render_tree(issues: list[Issue], target: Path):
         source_groups: dict[str, list[Issue]] = {}
         doc = load_doc(fpath)
         doc_type = doc.frontmatter.get("type", "") if doc else ""
+        # In verbose mode, also track which blocks have no issues at all
+        block_lines_with_issues = set()
         for i in file_issues:
             if i.line == 1 and i.rule in ("frontmatter", "status"):
                 key = (
@@ -120,6 +138,7 @@ def _render_tree(issues: list[Issue], target: Path):
                     else "L1 frontmatter"
                 )
             else:
+                block_lines_with_issues.add(i.line)
                 scope = ""
                 for blk in doc.blocks if doc else []:
                     if blk.line_number == i.line:
@@ -133,6 +152,31 @@ def _render_tree(issues: list[Issue], target: Path):
                 key = f"L{i.line} spec block{scope}"
             source_groups.setdefault(key, []).append(i)
 
+        # In verbose mode, add spec blocks that have no issues at all
+        if verbose and doc:
+            for blk in doc.blocks:
+                if blk.line_number not in block_lines_with_issues:
+                    parts = []
+                    if blk.cfg.get("type"):
+                        parts.append(f"type: {blk.cfg['type']}")
+                    if blk.cfg.get("scope"):
+                        parts.append(f"scope: {blk.cfg['scope']}")
+                    scope = f" ({', '.join(parts)})" if parts else ""
+                    key = f"L{blk.line_number} spec block{scope}"
+                    # add a synthetic pass issue so the block shows up in the tree
+                    source_groups.setdefault(
+                        key,
+                        [
+                            Issue(
+                                path=fpath,
+                                line=blk.line_number,
+                                level="pass",
+                                rule="",
+                                message="all rules passed",
+                            )
+                        ],
+                    )
+
         pipe = " " if is_last_file else "│"
 
         src_entries = list(source_groups.items())
@@ -141,10 +185,22 @@ def _render_tree(issues: list[Issue], target: Path):
             src_branch = "└──" if is_last_src else "├──"
             lines.append(f"{pipe}   {src_branch} {src_label}")
 
+            # In verbose mode, show nearest heading above this source
+            if verbose and doc:
+                src_line = src_issues[0].line if src_issues else 0
+                heading = _nearest_heading(doc, src_line) if src_line > 1 else None
+                if heading:
+                    lines.append(f"{pipe}       {heading}")
+
             for ii, issue in enumerate(src_issues):
                 is_last_issue = ii == len(src_issues) - 1
                 i_branch = "└──" if is_last_issue else "├──"
-                sym = c("✗", RED) if issue.level == "error" else c("⚠", YELLOW)
+                if issue.level == "error":
+                    sym = c("✗", RED)
+                elif issue.level == "pass":
+                    sym = c("✓", GREEN)
+                else:
+                    sym = c("⚠", YELLOW)
                 text = f"{issue.rule}: {issue.message}" if issue.rule else issue.message
                 if issue.context:
                     text += f" → {issue.context}"
@@ -156,11 +212,14 @@ def _render_tree(issues: list[Issue], target: Path):
     n_err = len(errors)
     n_warn = len(warns)
     parts = [f"{n_files} file{'s' if n_files != 1 else ''}"]
+    n_pass = len(passes)
     if n_err:
         parts.append(f"{c(str(n_err), RED, BOLD)} error{'s' if n_err != 1 else ''}")
     if n_warn:
         parts.append(f"{c(str(n_warn), YELLOW)} warning{'s' if n_warn != 1 else ''}")
-    if not n_err and not n_warn:
+    if verbose and n_pass:
+        parts.append(f"{c(str(n_pass), GREEN)} passed")
+    if not n_err and not n_warn and not verbose:
         parts.append(c("clean", GREEN))
     lines.append("  ".join(parts))
 
@@ -232,13 +291,13 @@ Your content here.
 # ── commands ─────────────────────────────────────────────────────────────────
 
 
-def cmd_validate(target: str):
+def cmd_validate(target: str, verbose: bool = False):
     p = Path(target)
     if not p.exists():
         print(f"ERR  path not found: {target}")
         sys.exit(1)
-    issues = validate_path(p)
-    _render_tree(issues, p)
+    issues = validate_path(p, verbose=verbose)
+    _render_tree(issues, p, verbose=verbose)
     errors = [i for i in issues if i.level == "error"]
     if errors:
         sys.exit(1)
@@ -284,6 +343,8 @@ def cmd_stamp(target: str):
 def main():
     args = sys.argv[1:]
     match args:
+        case ["validate", target, "--verbose"]:
+            cmd_validate(target, verbose=True)
         case ["validate", target]:
             cmd_validate(target)
         case ["new", doc_type]:

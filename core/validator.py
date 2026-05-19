@@ -38,11 +38,15 @@ class Issue:
     context: str = ""  # e.g. "allowed: draft, active, frozen, done"
 
     def __str__(self):
-        tag = "ERR " if self.level == "error" else "WARN"
+        tag = (
+            "ERR "
+            if self.level == "error"
+            else ("WARN" if self.level == "warn" else "PASS")
+        )
         return f"{tag} {self.path}:{self.line} — {self.message}"
 
 
-def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
+def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list[Issue]:
     registry = load_types(types_dir)
     issues: list[Issue] = []
     doc_type_name = doc.frontmatter.get("type", "")
@@ -61,6 +65,16 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
                         message=f"missing required field '{field}' for type '{typedef.name}'",
                     )
                 )
+            elif verbose:
+                issues.append(
+                    Issue(
+                        doc.path,
+                        1,
+                        "pass",
+                        rule="frontmatter",
+                        message=f"required field '{field}' present",
+                    )
+                )
         status = doc.frontmatter.get("status", "")
         if status and status not in typedef.statuses:
             issues.append(
@@ -71,6 +85,16 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
                     rule="status",
                     message=f"'{status}' not valid for type '{typedef.name}'",
                     context=f"allowed: {', '.join(typedef.statuses)}",
+                )
+            )
+        elif status and verbose:
+            issues.append(
+                Issue(
+                    doc.path,
+                    1,
+                    "pass",
+                    rule="status",
+                    message=f"'{status}' is valid for type '{typedef.name}'",
                 )
             )
     elif doc_type_name:
@@ -131,7 +155,8 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
         for rule_key, rule_value in effective_rules.items():
             fn = RULES.get(rule_key)
             if fn:
-                for msg in fn(block.sibling_text, rule_value, block.cfg):
+                errors = fn(block.sibling_text, rule_value, block.cfg)
+                for msg in errors:
                     issues.append(
                         Issue(
                             doc.path,
@@ -141,11 +166,54 @@ def validate_doc(doc: ParsedDoc, types_dir: Path) -> list[Issue]:
                             message=msg,
                         )
                     )
+                if not errors and verbose:
+                    issues.append(
+                        Issue(
+                            doc.path,
+                            block.line_number,
+                            "pass",
+                            rule=rule_key,
+                            message=_pass_message(rule_key, rule_value),
+                        )
+                    )
 
     return issues
 
 
-def validate_path(target: Path) -> list[Issue]:
+def _pass_message(rule_key: str, rule_value) -> str:
+    """Generate a human-readable message for a passing rule."""
+    if rule_key == "max_chars":
+        return f"content within {rule_value} char limit"
+    if rule_key == "banned_words":
+        words = (
+            ", ".join(rule_value) if isinstance(rule_value, list) else str(rule_value)
+        )
+        return f"no banned words found ({words})"
+    if rule_key == "required_sections":
+        sections = (
+            ", ".join(rule_value) if isinstance(rule_value, list) else str(rule_value)
+        )
+        return f"all required sections present ({sections})"
+    if rule_key == "validate":
+        checks = (
+            ", ".join(rule_value) if isinstance(rule_value, list) else str(rule_value)
+        )
+        return f"all {checks} checks passed"
+    if rule_key == "match":
+        labels = []
+        if isinstance(rule_value, list):
+            for entry in rule_value:
+                if isinstance(entry, dict):
+                    labels.extend(entry.keys())
+        return (
+            f"all patterns matched ({', '.join(labels)})"
+            if labels
+            else "all patterns matched"
+        )
+    return "passed"
+
+
+def validate_path(target: Path, verbose: bool = False) -> list[Issue]:
     from core.loader import load_doc
 
     files = list(target.rglob("*.md")) if target.is_dir() else [target]
@@ -154,5 +222,5 @@ def validate_path(target: Path) -> list[Issue]:
     for f in files:
         doc = load_doc(f)
         if doc:
-            all_issues.extend(validate_doc(doc, types_dir))
+            all_issues.extend(validate_doc(doc, types_dir, verbose=verbose))
     return all_issues

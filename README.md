@@ -5,8 +5,8 @@
 ```bash
 ██████╗  ██████╗  ██████╗███████╗███████╗███╗   ██╗ ██████╗███████╗
 ██╔══██╗██╔═══██╗██╔════╝██╔════╝██╔════╝████╗  ██║██╔════╝██╔════╝
-██║  ██║██║   ██║██║     █████╗  █████╗  ██╔██╗ ██║██║     █████╗  
-██║  ██║██║   ██║██║     ██╔══╝  ██╔══╝  ██║╚██╗██║██║     ██╔══╝  
+██║  ██║██║   ██║██║     █████╗  █████╗  ██╔██╗ ██║██║     █████╗
+██║  ██║██║   ██║██║     ██╔══╝  ██╔══╝  ██║╚██╗██║██║     ██╔══╝
 ██████╔╝╚██████╔╝╚██████╗██║     ███████╗██║ ╚████║╚██████╗███████╗
 ╚═════╝  ╚═════╝  ╚═════╝╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
 ```
@@ -96,34 +96,40 @@ We will build background jobs. TODO add progress tracking.
 
 ```bash
 $ docfence validate sample-docs/
+#              ↑ run on a folder to validate all .md files inside
 
-sample-docs/
-├── ✗ bad-feature.md
-│   ├── L1 frontmatter (type: feature)
-│   │   ├── ✗ frontmatter: missing required field 'owner'
-│   │   └── ✗ status: 'brainstorm' not valid → allowed: draft, active, frozen, done
-│   ├── L4 spec block (type: feature, scope: document)
-│   │   ├── ✗ banned_words: 'TODO' found in content
-│   │   └── ✗ banned_words: 'TBD' found in content
-│   └── L18 spec block (type: feature)
+sample-docs/                                   									# ← folder root
+├── ✗ bad-feature.md                           									# ✗ = has errors (stamp blocked)
+│   ├── L1 frontmatter (type: feature)         									# ← L1 = line 1; frontmatter checks come from the type definition
+│   │   ├── ✗ frontmatter: missing required field 'owner'       # 'owner' is required_fields in the type .toml
+│   │   └── ✗ status: 'brainstorm' not valid → allowed: draft, active, frozen, done  # status must be in type's statuses list
+│   ├── L4 spec block (type: feature, scope: document)           # ← L4 = line 4; scope: document = rules apply to whole file
+│   │   ├── ✗ banned_words: 'TODO' found in content              # banned_words rule caught 'TODO' in the document body
+│   │   └── ✗ banned_words: 'TBD' found in content               # same rule, second hit — each banned word is a separate issue
+│   └── L18 spec block (type: feature)         # ← no scope = section-level; rules only apply to text after this fence
 │       └── ✗ banned_words: 'TODO' found in content
-├── ✓ exploration-auth.md
+├── ✓ exploration-auth.md                       # ✓ = clean, no issues found
 ├── ✓ good-feature.md
-└── ⚠ test-match.md
+└── ⚠ test-match.md                           # ⚠ = warnings only (non-blocking)
     └── L18 spec block (type: feature)
-        └── ⚠ inherited: uses inherited defaults for banned_words
+        └── ⚠ inherited: uses inherited defaults for banned_words  # rule wasn't set in the block; fell back to type defaults
 
-4 files  5 errors  1 warning
+4 files  5 errors  1 warning                    # ← summary: errors block stamp, warnings are advisory
 ```
 
 ## Usage
 
 ```shell
-docfence validate <file|folder>     # validate one file or all .md in folder
-docfence new <type>                # print a blank template to stdout
-docfence types                     # list all available types
-docfence stamp <file>              # write last_validated timestamp (only if clean)
+docfence validate <file|folder>         # validate one file or all .md in folder
+docfence validate <file|folder> --verbose  # show passing checks + section headings
+docfence new <type>                       # print a blank template to stdout
+docfence types                             # list all available types
+docfence stamp <file>                      # write last_validated timestamp (only if clean)
 ```
+
+## Verbose Mode
+
+Pass `--verbose` to see passing checks and section headings. → [VERBOSE.md](VERBOSE.md)
 
 ## Doc Types
 
