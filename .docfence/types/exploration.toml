@@ -6,3 +6,17 @@ required_fields = ["id", "status", "owner"]
 max_chars = 5000
 banned_words = ["TODO", "TBD"]
 required_sections = ["Background", "Decision", "Open Questions"]
+
+[template_vars]
+id = "EXPLORATION-001"
+title = "Exploration Title"
+owner = "human"
+
+[template_vars.sections.Background]
+fill = "[REPLACE] Why this exploration is needed — delete this block and write your content"
+
+[template_vars.sections.Decision]
+fill = "[REPLACE] What was decided and why, including alternatives considered — delete this block and write your content"
+
+[template_vars.sections."Open Questions"]
+fill = "[REPLACE] List unresolved questions or items needing further investigation — delete this block and write your content"

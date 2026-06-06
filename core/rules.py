@@ -51,8 +51,11 @@ def rule_required_sections(text: str, value: list[str], cfg: dict) -> list[str]:
     errors = []
     for heading in value:
         pattern = heading.lower()
-        if not any(pattern in line.lower() for line in text.splitlines()
-                   if line.startswith("#")):
+        if not any(
+            pattern in line.lower()
+            for line in text.splitlines()
+            if line.startswith("#")
+        ):
             errors.append(f"required section missing: '{heading}'")
     return errors
 
@@ -82,9 +85,24 @@ def rule_match(text: str, value: list[dict], cfg: dict) -> list[str]:
                 errors.append(f"match '{label}': invalid regex — {e}")
                 continue
             if not any(compiled.search(line) for line in lines):
-                errors.append(
-                    f"match '{label}': no line matched pattern /{pattern}/"
-                )
+                errors.append(f"match '{label}': no line matched pattern /{pattern}/")
+    return errors
+
+
+def rule_placeholders(text: str, value: list[str], cfg: dict) -> list[str]:
+    """Check that no unfilled placeholder blocks remain in the text.
+
+    value is a list of literal pattern strings to search for (e.g. ["```df-todo"]).
+    Each pattern is escaped before searching so it matches literally, not as regex.
+    """
+    errors = []
+    for pattern in value:
+        escaped = re.escape(pattern)
+        count = len(re.findall(escaped, text))
+        errors.extend(
+            "unfilled placeholder block found — delete it and replace with content"
+            for _ in range(count)
+        )
     return errors
 
 
@@ -95,4 +113,5 @@ RULES: dict[str, callable] = {
     "validate": rule_validate,
     "required_sections": rule_required_sections,
     "match": rule_match,
+    "placeholders": rule_placeholders,
 }

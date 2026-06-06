@@ -5,3 +5,11 @@ required_fields = ["id", "status", "owner"]
 [defaults]
 max_chars = 3000
 banned_words = ["TODO", "TBD", "placeholder"]
+
+[template_vars]
+id = "FEATURE-001"
+title = "Feature Title"
+owner = "human"
+
+[template_vars.sections.Overview]
+fill = "[REPLACE] What this feature does and why — delete this block and write your content"

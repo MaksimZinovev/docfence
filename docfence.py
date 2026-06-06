@@ -39,7 +39,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from core.loader import load_doc
-from core.types import load_types
+from core.types import TypeDef, load_types, resolve_type
 from core.validator import validate_path, Issue
 
 # ── colors ───────────────────────────────────────────────────────────────────
@@ -255,37 +255,94 @@ def _load_types_list(start: Path) -> list[str]:
     )
 
 
-def _template(doc_type: str) -> str:
-    return f"""\
----
-id: {doc_type[0].upper()}-001
-type: {doc_type}
-status: draft
-owner: human
-depends_on: []
-last_validated: ~
----
+def _generate_scaffold(
+    doc_type: str, type_def: TypeDef | None, overrides: dict | None = None
+) -> str:
+    """Generate a full scaffolded document from a TypeDef.
 
-# Title
+    Sections come from template_vars.sections (falling back to required_sections).
+    df-todo blocks carry name and fill fields from template_vars.
+    Spec blocks carry explicit rules from defaults.
+    """
+    overrides = overrides or {}
+    defaults = type_def.defaults if type_def else {}
+    tv = type_def.template_vars if type_def else {}
 
-```spec
-scope: document
-type: {doc_type}
-required_sections: [Overview]
-max_chars: 3000
-banned_words: [TODO, TBD, placeholder]
-```
+    # --- frontmatter ---
+    fm_id = overrides.get("id") or tv.get("id", f"{doc_type[0].upper()}-001")
+    fm_title = overrides.get("title") or tv.get("title", "Title")
+    fm_owner = overrides.get("owner") or tv.get("owner", "human")
+    fm_status = overrides.get("status") or tv.get("status", "draft")
 
-## Overview
+    # --- document-level spec block ---
+    doc_rules: dict[str, object] = {"scope": "document", "type": doc_type}
+    for key in ("required_sections", "max_chars", "banned_words", "placeholders"):
+        if key in defaults:
+            doc_rules[key] = defaults[key]
+    if "placeholders" not in doc_rules:
+        doc_rules["placeholders"] = ["```df-todo"]
+    doc_spec_lines = ["```spec"]
+    for k, v in doc_rules.items():
+        doc_spec_lines.append(_format_spec_kv(k, v))
+    doc_spec_lines.append("```")
+    doc_spec = "\n".join(doc_spec_lines)
 
-```spec
-type: {doc_type}
-max_chars: 1000
-banned_words: [TODO, TBD, placeholder]
-```
+    # --- sections ---
+    sections_cfg = tv.get("sections", {})
+    required = defaults.get("required_sections", ["Overview"])
+    section_names = list(sections_cfg.keys()) if sections_cfg else list(required)
 
-Your content here.
-"""
+    section_blocks = []
+    for name in section_names:
+        sec_cfg = sections_cfg.get(name, {})
+        fill = sec_cfg.get(
+            "fill",
+            "[REPLACE] Write your content — delete this block and write your content",
+        )
+        slug = name.lower().replace(" ", "-")
+
+        # df-todo block
+        todo = f'```df-todo\nname = "{slug}"\nfill = "{fill}"\n```'
+
+        # section spec block — placeholders rule is document-scope only
+        sec_rules: dict[str, object] = {"type": doc_type}
+        for key in ("max_chars", "banned_words", "match"):
+            if key in defaults:
+                sec_rules[key] = defaults[key]
+        sec_spec_lines = ["```spec"]
+        for k, v in sec_rules.items():
+            sec_spec_lines.append(_format_spec_kv(k, v))
+        sec_spec_lines.append("```")
+        sec_spec = "\n".join(sec_spec_lines)
+
+        section_blocks.append(f"## {name}\n\n{todo}\n\n{sec_spec}")
+
+    sections = "\n\n".join(section_blocks)
+
+    return (
+        f"---\n"
+        f"id: {fm_id}\n"
+        f"type: {doc_type}\n"
+        f"status: {fm_status}\n"
+        f"owner: {fm_owner}\n"
+        f"depends_on: []\n"
+        f"last_validated: ~\n"
+        f"---\n\n"
+        f"# {fm_title}\n\n"
+        f"{doc_spec}\n\n"
+        f"{sections}\n"
+    )
+
+
+def _format_spec_kv(key: str, value) -> str:
+    """Format a spec block key-value pair."""
+    if isinstance(value, list):
+        if key == "placeholders":
+            items = ", ".join(f'"{v}"' for v in value)
+        else:
+            items = ", ".join(str(v) for v in value)
+        return f"{key}: [{items}]"
+    return f"{key}: {value}"
 
 
 # ── commands ─────────────────────────────────────────────────────────────────
@@ -303,12 +360,17 @@ def cmd_validate(target: str, verbose: bool = False):
         sys.exit(1)
 
 
-def cmd_new(doc_type: str):
-    known = _load_types_list(Path.cwd())
-    if doc_type not in known:
-        print(f"Unknown type '{doc_type}'. Run: docfence types")
-        sys.exit(1)
-    print(_template(doc_type))
+def cmd_new(doc_type: str, output: Path | None = None, overrides: dict | None = None):
+    registry = load_types(Path.cwd())
+    type_def = resolve_type(doc_type, registry) if registry else None
+
+    content = _generate_scaffold(doc_type, type_def, overrides)
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(content)
+        print(f"Created {output}")
+    else:
+        print(content, end="")
 
 
 def cmd_types():
@@ -342,13 +404,35 @@ def cmd_stamp(target: str):
 
 def main():
     args = sys.argv[1:]
-    match args:
-        case ["validate", target, "--verbose"]:
-            cmd_validate(target, verbose=True)
+    match args[:2]:
         case ["validate", target]:
-            cmd_validate(target)
+            rest = args[2:]
+            verbose = "--verbose" in rest
+            cmd_validate(target, verbose=verbose)
         case ["new", doc_type]:
-            cmd_new(doc_type)
+            rest = args[2:]
+            output = None
+            overrides = {}
+            i = 0
+            while i < len(rest):
+                if rest[i] == "--output" and i + 1 < len(rest):
+                    output = Path(rest[i + 1])
+                    i += 2
+                elif rest[i] == "--set" and i + 1 < len(rest):
+                    # --set key=value (next arg is the key=value pair)
+                    kv = rest[i + 1].split("=", 1)
+                    if len(kv) == 2:
+                        overrides[kv[0]] = kv[1]
+                    i += 2
+                elif rest[i].startswith("--set="):
+                    # --set=key=value (inline)
+                    kv = rest[i].removeprefix("--set=").split("=", 1)
+                    if len(kv) == 2:
+                        overrides[kv[0]] = kv[1]
+                    i += 1
+                else:
+                    i += 1
+            cmd_new(doc_type, output=output, overrides=overrides or None)
         case ["types"]:
             cmd_types()
         case ["stamp", target]:

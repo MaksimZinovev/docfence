@@ -114,7 +114,7 @@ def _extract_headings(text: str) -> dict[int, str]:
 def _extract_spec_blocks(body: str) -> list[tuple[str, str, int]]:
     """Returns list of (raw_toml, sibling_text, line_number)."""
     results = []
-    pattern = re.compile(r"```spec\n(.*?)```", re.DOTALL)
+    pattern = re.compile(r"```spec\n(.*?)\n```\s*\n", re.DOTALL)
     lines = body.split("\n")
     line_starts = {}
     pos = 0
@@ -147,7 +147,7 @@ def load_doc(path: Path) -> ParsedDoc | None:
     raw_blocks = _extract_spec_blocks(body)
     blocks: list[SpecBlock] = []
 
-    _SPEC_BLOCK_RE = re.compile(r"```spec\n.*?```", re.DOTALL)
+    _SPEC_BLOCK_RE = re.compile(r"```spec\n.*?\n```\s*", re.DOTALL)
 
     for raw_toml, sibling, ln in raw_blocks:
         try:

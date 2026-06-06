@@ -11,9 +11,14 @@ from dataclasses import dataclass, field
 @dataclass
 class TypeDef:
     name: str
-    statuses: list[str] = field(default_factory=lambda: ["draft", "active", "frozen", "done"])
-    required_fields: list[str] = field(default_factory=lambda: ["id", "status", "owner"])
+    statuses: list[str] = field(
+        default_factory=lambda: ["draft", "active", "frozen", "done"]
+    )
+    required_fields: list[str] = field(
+        default_factory=lambda: ["id", "status", "owner"]
+    )
     defaults: dict = field(default_factory=dict)
+    template_vars: dict = field(default_factory=dict)
     source: str = "built-in"
 
 
@@ -45,6 +50,7 @@ def load_types(start: Path) -> dict[str, TypeDef]:
             statuses=raw.get("statuses", _FALLBACK.statuses),
             required_fields=raw.get("required_fields", _FALLBACK.required_fields),
             defaults=raw.get("defaults", {}),
+            template_vars=raw.get("template_vars", {}),
             source=str(toml_file),
         )
     return types
