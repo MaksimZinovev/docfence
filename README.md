@@ -122,7 +122,9 @@ sample-docs/                                   									# ← folder root
 ```shell
 docfence validate <file|folder>         # validate one file or all .md in folder
 docfence validate <file|folder> --verbose  # show passing checks + section headings
-docfence new <type>                       # print a blank template to stdout
+docfence new <type>                       # scaffold a doc with df-todo placeholders
+docfence new <type> --output <path>        # scaffold and write to file
+docfence new <type> --set owner=alice     # override frontmatter defaults
 docfence types                             # list all available types
 docfence stamp <file>                      # write last_validated timestamp (only if clean)
 ```
@@ -190,6 +192,7 @@ max_chars: 5000
 | `match`                   | `match:` + indented `label: "regex"` | at least one line matches each named pattern   |
 | `validate: [file_exists]` |                                      | every line in sibling text is a real path      |
 | `validate: [valid_url]`   |                                      | every `http` line in sibling text is reachable |
+| `placeholders`             | `placeholders: ["```df-todo"]`     | unfilled placeholder blocks remain in doc       |
 | `required_sections`       | `required_sections: [Overview]`      | document-scope only; heading must exist        |
 
 **`match` example:**
