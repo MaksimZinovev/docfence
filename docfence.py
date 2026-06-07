@@ -276,7 +276,7 @@ def _generate_scaffold(
 
     # --- document-level spec block ---
     doc_rules: dict[str, object] = {"scope": "document", "type": doc_type}
-    for key in ("required_sections", "max_chars", "banned_words", "placeholders"):
+    for key in ("required_sections", "max_chars", "banned_words", "placeholders", "match"):
         if key in defaults:
             doc_rules[key] = defaults[key]
     if "placeholders" not in doc_rules:
@@ -306,7 +306,7 @@ def _generate_scaffold(
 
         # section spec block — placeholders rule is document-scope only
         sec_rules: dict[str, object] = {"type": doc_type}
-        for key in ("max_chars", "banned_words", "match"):
+        for key in ("max_chars", "banned_words"):
             if key in defaults:
                 sec_rules[key] = defaults[key]
         sec_spec_lines = ["```spec"]
@@ -342,6 +342,14 @@ def _format_spec_kv(key: str, value) -> str:
         else:
             items = ", ".join(str(v) for v in value)
         return f"{key}: [{items}]"
+    if isinstance(value, dict):
+        # Render dict as sub-block (e.g. match: rules)
+        # Always single-quote values; escape any inner single quotes
+        lines = [f"{key}:"]
+        for k, v in value.items():
+            escaped = str(v).replace("'", "\\'")
+            lines.append(f"  {k}: '{escaped}'")
+        return "\n".join(lines)
     return f"{key}: {value}"
 
 

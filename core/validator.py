@@ -136,7 +136,14 @@ def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list
             if rule_key in block.cfg:
                 effective_rules[rule_key] = block.cfg[rule_key]
             elif rule_key in defaults:
-                effective_rules[rule_key] = defaults[rule_key]
+                # match is document-scope only; don't inherit into section-level blocks
+                if rule_key == "match" and block.scope != "document":
+                    continue
+                val = defaults[rule_key]
+                # toml stores match as {label: pattern}; rule_match expects [{label: pattern}]
+                if rule_key == "match" and isinstance(val, dict):
+                    val = [{k: v} for k, v in val.items()]
+                effective_rules[rule_key] = val
                 inherited.append(rule_key)
 
         if inherited:
