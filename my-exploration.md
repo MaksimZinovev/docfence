@@ -20,10 +20,7 @@ placeholders: ["```df-todo"]
 
 ## Background
 
-```df-todo
-name = "background"
-fill = "[REPLACE] Why this exploration is needed — delete this block and write your content"
-```
+
 
 ```spec
 type: exploration
