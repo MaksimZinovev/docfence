@@ -187,24 +187,32 @@ def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list
                         )
                     )
 
-        # hint: section-scope block with empty sibling_text and match errors
-        # likely has spec block at end of section instead of top
-        if (
-            block.scope != "document"
-            and block_match_errors > 0
-            and len(block.sibling_text.strip()) < 20
-        ):
-            issues.append(
-                Issue(
-                    doc.path,
-                    block.line_number,
-                    "hint",
-                    rule="spec-placement",
-                    message="spec block has no content after it — move to top of section "
-                    "so validation sees the section content. "
-                    "See README: Section-level spec blocks",
-                )
+    # --- post-block hints ---
+    # only emit spec-placement hint if document has no placeholder issues
+    # (otherwise empty sibling_text is expected for a fresh scaffold)
+    has_placeholders = any(
+        i.rule == "placeholders" and i.level == "error" for i in issues
+    )
+    if not has_placeholders:
+        for block in doc.blocks:
+            if block.scope == "document":
+                continue
+            match_errors = sum(
+                1 for i in issues
+                if i.line == block.line_number and i.rule == "match" and i.level == "error"
             )
+            if match_errors > 0 and len(block.sibling_text.strip()) < 20:
+                issues.append(
+                    Issue(
+                        doc.path,
+                        block.line_number,
+                        "hint",
+                        rule="spec-placement",
+                        message="spec block has no content after it — move to top of section "
+                        "so validation sees the section content. "
+                        "See README: Section-level spec blocks",
+                    )
+                )
 
     return issues
 
