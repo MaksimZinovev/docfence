@@ -45,7 +45,7 @@ match:
 - **verification-before-completion**: Yes — verify fix against orient-startup-race.md before declaring done
 - **systematic-debugging**: No — root cause already identified, no further investigation needed
 - **skill-creator**: No — no skill creation involved
-- **cx/ck**: No — codebase is small, known files, grep sufficient
+- **cx/ck**: Yes — search for other rule keys that may also leak at section scope
 - **mcp: github-cli**: Possibly — if commit/pr workflow needed
 
 ```spec
