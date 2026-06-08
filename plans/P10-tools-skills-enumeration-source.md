@@ -45,16 +45,16 @@ type: plan
 max_chars: 20000
 banned_words: [N/A, n/a]
 match:
-  min_3_ynp: '^- \*\*[^*]+\*\*: (Yes|No|Possibly)\b'
+  min_3_ynp: '^- .+: (Yes|No|Possibly)\b'
 ```
 
-- **grounded-planning**: Yes — this plan modifies the plan type and planning skill
-- **skill-creator**: Yes — updating SKILL.md for grounded-planning
-- **verification-before-completion**: Yes — validate scaffold and existing plans after changes
-- **cx/ck**: Possibly — if searching for other references to the fill text
-- **systematic-debugging**: No — no investigation needed
-- **root-cause-tracing**: No — root cause is clear (ambiguous fill text)
-- **commit**: Possibly — multi-repo commit coordination
+- grounded-planning: Yes — this plan modifies the plan type and planning skill
+- skill-creator: Yes — updating SKILL.md for grounded-planning
+- verification-before-completion: Yes — validate scaffold and existing plans after changes
+- cx/ck: Possibly — if searching for other references to the fill text
+- systematic-debugging: No — no investigation needed
+- root-cause-tracing: No — root cause is clear (ambiguous fill text)
+- commit: Possibly — multi-repo commit coordination
 
 ## Approach
 
@@ -75,14 +75,14 @@ type: plan
 max_chars: 20000
 banned_words: [Nothing., None., N/A, n/a, Not applicable]
 match:
-  has_justification: '^- \*\*[^*]+\*\*:'
-  min_2_exclusions: '^- \*\*[^*]+\*\*:'
+  has_justification: '^- .+:'
+  min_2_exclusions: '^- .+:'
 ```
 
-- **Adding a match rule for skill/tool membership**: Regex can't validate against a dynamic list. Procedural enforcement via SKILL.md is sufficient.
-- **Changing Y/N/P format**: The format works; the problem is what items qualify, not how they're formatted.
-- **Auto-generating Tools & Skills from `pi --skills` output**: Would be a future enhancement (script that scaffolds the section from actual skill tree), not this fix.
-- **P8 and P9 fixes**: Separate plans.
+- Adding a match rule for skill/tool membership: Regex can't validate against a dynamic list. Procedural enforcement via SKILL.md is sufficient.
+- Changing Y/N/P format: The format works; the problem is what items qualify, not how they're formatted.
+- Auto-generating Tools & Skills from `pi --skills` output: Would be a future enhancement (script that scaffolds the section from actual skill tree), not this fix.
+- P8 and P9 fixes: Separate plans.
 
 ## Steps
 
@@ -95,32 +95,32 @@ match:
   min_3_steps: '^- \[( |x)\]'
 ```
 
-- [ ] **Update plan.toml fill text for Tools & Skills section**: Change from generic "tools/skills" to explicit "Pi skills and tools". Current: `"[REPLACE] List top ~10 relevant tools/skills: **name**: Yes / No (why not needed) / Possibly (when you'd use it). Minimum 3 entries. No N/A."` — New: `"[REPLACE] List Pi skills from pi --skills and tools from pi --tools: **skill-name**: Yes / No (reason) / Possibly (when). Minimum 3 entries. No N/A. No file references. No dismissive 'No' — justify by task scope."`
+- [ ] Update plan.toml fill text for Tools & Skills section: Change from generic "tools/skills" to explicit "Pi skills and tools". Current: `"[REPLACE] List top ~10 relevant tools/skills: name: Yes / No (why not needed) / Possibly (when you'd use it). Minimum 3 entries. No N/A."` — New: `"[REPLACE] List Pi skills from pi --skills and tools from pi --tools: skill-name: Yes / No (reason) / Possibly (when). Minimum 3 entries. No N/A. No file references. No dismissive 'No' — justify by task scope."`
   - Evidence: The current fill text never defines "tools/skills" as Pi ecosystem items — planner fills with whatever seems relevant, including file paths. Also, "No" reasons like "codebase is small" are dismissive — they say "I didn't think about it" rather than "it's categorically irrelevant to this task's scope." (Source: plan.toml fill text, P8 annotation feedback: "this is not an excuse")
   - Confidence: 0.95
   - Details: The fill text now requires: (a) enumeration source = Pi skills/tools, (b) no file references, (c) "No" justifications must reference task scope/nature, not codebase size or convenience.
 
-- [ ] **Add `file_references` to banned_words for Tools & Skills section**: Add patterns that catch file-path entries like `validator.py`, `plan.toml type`, `orient-startup-race.md`. These are never valid skill/tool names.
-  - Evidence: P8 had entries like `**validator.py**: Yes` and `**plan.toml type**: Yes` — these are files, not skills. (Source: P8 annotation feedback)
+- [ ] Add `file_references` to banned_words for Tools & Skills section: Add patterns that catch file-path entries like `validator.py`, `plan.toml type`, `orient-startup-race.md`. These are never valid skill/tool names.
+  - Evidence: P8 had entries like `validator.py: Yes` and `plan.toml type: Yes` — these are files, not skills. (Source: P8 annotation feedback)
   - Confidence: 0.85
   - Details: Add to `[template_vars.sections."Tools & Skills".banned_words]`: entries like `.py`, `.toml`, `.md`, `.json` — but be careful not to ban legitimate skill names that might contain dots. Better approach: add a note in fill text that says "No file references" and rely on procedural enforcement, since banning `.py` etc. would also catch `mcp: github-cli` style entries if we're not careful.
 
-- [ ] **Add dismissive "No" patterns to banned_words for Tools & Skills section**: Ban phrases that indicate the author didn't think about the skill: "small codebase", "simple enough", "grep sufficient", "not needed for small", "overkill for". These are excuses, not justifications.
+- [ ] Add dismissive "No" patterns to banned_words for Tools & Skills section: Ban phrases that indicate the author didn't think about the skill: "small codebase", "simple enough", "grep sufficient", "not needed for small", "overkill for". These are excuses, not justifications.
   - Evidence: P8 had "cx/ck: No — codebase is small, known files, grep sufficient" — the "No" was dismissive, not grounded in task scope. A proper "No" would be: "cx/ck: No — scope is a single-line validation filter change with no code search needed." (Source: P8 annotation feedback)
   - Confidence: 0.85
   - Details: Add to `[template_vars.sections."Tools & Skills".banned_words]`: `grep sufficient`, `small codebase`, `simple enough`, `overkill for`. These patterns specifically flag laziness, not legitimate scope-based decisions.
 
-- [ ] **Update format.md: document what counts as a valid Tools & Skills entry and valid "No" justification**: Add a clarifying section explaining that (a) "tools" means Pi tools, "skills" means Pi skills — files go in Files to Modify, not here; (b) "No" justifications must reference the task's scope/nature, not codebase size or convenience. Include examples of good vs bad "No" reasons.
+- [ ] Update format.md: document what counts as a valid Tools & Skills entry and valid "No" justification: Add a clarifying section explaining that (a) "tools" means Pi tools, "skills" means Pi skills — files go in Files to Modify, not here; (b) "No" justifications must reference the task's scope/nature, not codebase size or convenience. Include examples of good vs bad "No" reasons.
   - Evidence: format.md currently doesn't define what qualifies as a tool or skill, and doesn't distinguish dismissive from grounded "No" justifications. (Source: format.md)
   - Confidence: 0.90
   - Details: Add a table. Bad "No": "cx: No — codebase is small, grep sufficient" (dismissive — about the codebase, not the task). Good "No": "cx: No — scope is a single-line regex change, no code search needed" (grounded — about the task's nature).
 
-- [ ] **Update SKILL.md for grounded-planning: add skill enumeration step**: In the planning workflow, add a step between "read format.md" and "scaffold" that says: "Run `pi --skills` and `pi --tools` to enumerate available skills/tools before filling Tools & Skills section. Only list items from these sources."
+- [ ] Update SKILL.md for grounded-planning: add skill enumeration step: In the planning workflow, add a step between "read format.md" and "scaffold" that says: "Run `pi --skills` and `pi --tools` to enumerate available skills/tools before filling Tools & Skills section. Only list items from these sources."
   - Evidence: SKILL.md currently doesn't mention where to find valid skills/tools. The planner has no way to know the enumeration source. (Source: pi-agent-config/skills/grounded-planning/SKILL.md)
   - Confidence: 0.90
   - Details: Add to Step 5 (scaffold first) or create a new step: "Before filling Tools & Skills, enumerate available Pi skills and tools: run `pi --skills` and `pi --tools`. Only list items that appear in these outputs or are direct MCP tools."
 
-- [ ] **Sync plan.toml changes to pi-agent-config repo**: Copy the updated plan.toml from docfence repo to pi-agent-config/.docfence/types/plan.toml.
+- [ ] Sync plan.toml changes to pi-agent-config repo: Copy the updated plan.toml from docfence repo to pi-agent-config/.docfence/types/plan.toml.
   - Evidence: Both repos must stay in sync per established convention. (Source: previous session work)
   - Confidence: 0.95
   - Details: `cp /Users/maksim/repos/docfence/.docfence/types/plan.toml /Users/maksim/repos/pi-agent-config/.docfence/types/plan.toml`
@@ -147,12 +147,12 @@ type: plan
 max_chars: 20000
 banned_words: [None., N/A, Nothing to reuse, No reuse]
 match:
-  has_reuse_item: '^- \*\*[^*]+\*\*:'
+  has_reuse_item: '^- .+:'
 ```
 
-- **Existing `has_ynp_format` match rule**: Correctly validates Y/N/P structure — no change needed. The fix is about what items qualify, not format. (Source: plan.toml match rules)
-- **Existing banned_words mechanism**: Can add file-extension patterns to catch file references in the section. (Source: plan.toml section-level banned_words)
-- **P8 annotation feedback**: The corrected Tools & Skills section in P8 (after user fix) serves as a reference example of what a valid entry list looks like. (Source: P8 Tools & Skills after fix)
+- Existing `has_ynp_format` match rule: Correctly validates Y/N/P structure — no change needed. The fix is about what items qualify, not format. (Source: plan.toml match rules)
+- Existing banned_words mechanism: Can add file-extension patterns to catch file references in the section. (Source: plan.toml section-level banned_words)
+- P8 annotation feedback: The corrected Tools & Skills section in P8 (after user fix) serves as a reference example of what a valid entry list looks like. (Source: P8 Tools & Skills after fix)
 
 ## Evidence Pack
 
@@ -161,29 +161,29 @@ type: plan
 max_chars: 20000
 banned_words: [**Source**:, **Source:**]
 match:
-  has_evidence_claim: '^- \*\*Claim\*:'
-  has_confidence: '\*\*Confidence\*\*:'
+  has_evidence_claim: '^- Claim:'
+  has_confidence: 'Confidence:'
 ```
 
-- **Claim**: The root cause is ambiguous fill text — "tools/skills" is undefined, so the planner fills with whatever seems relevant including file references.
+- Claim: The root cause is ambiguous fill text — "tools/skills" is undefined, so the planner fills with whatever seems relevant including file references.
   Source: plan.toml fill text: `[REPLACE] List top ~10 relevant tools/skills` — no definition of what qualifies
-  **Confidence**: 0.95
-  **Implication**: Making the enumeration source explicit in fill text + format.md + SKILL.md eliminates the ambiguity.
+  Confidence: 0.95
+  Implication: Making the enumeration source explicit in fill text + format.md + SKILL.md eliminates the ambiguity.
 
-- **Claim**: Procedural enforcement (SKILL.md instruction + explicit fill text) is sufficient; a match rule for membership validation is impractical.
+- Claim: Procedural enforcement (SKILL.md instruction + explicit fill text) is sufficient; a match rule for membership validation is impractical.
   Source: The skill set is dynamic (changes as skills are installed/removed); regex can't validate membership against a dynamic list
-  **Confidence**: 0.90
-  **Implication**: Don't try to solve this with match rules — solve it with clear instructions.
+  Confidence: 0.90
+  Implication: Don't try to solve this with match rules — solve it with clear instructions.
 
-- **Claim**: Banning file extensions (.py, .md, .toml) in Tools & Skills banned_words is risky because some MCP tools or CLI tools might contain dots in their names.
+- Claim: Banning file extensions (.py, .md, .toml) in Tools & Skills banned_words is risky because some MCP tools or CLI tools might contain dots in their names.
   Source: MCP tool names like `mcp: github-cli` don't contain file extensions, but hypothetical future tools might
-  **Confidence**: 0.70
-  **Implication**: Safer to add "No file references" to fill text and rely on procedural enforcement than to risk false positives from pattern-based banning.
+  Confidence: 0.70
+  Implication: Safer to add "No file references" to fill text and rely on procedural enforcement than to risk false positives from pattern-based banning.
 
-- **Claim**: Dismissive "No" justifications ("codebase is small, grep sufficient") are a different failure mode from file references — they indicate the author didn't assess the skill's relevance to the task scope.
+- Claim: Dismissive "No" justifications ("codebase is small, grep sufficient") are a different failure mode from file references — they indicate the author didn't assess the skill's relevance to the task scope.
   Source: P8 annotation: "this is not an excuse" — the user flagged that "codebase is small" says nothing about whether cx/ck is relevant to the task
-  **Confidence**: 0.95
-  **Implication**: Banned_words can catch the most common dismissive patterns ("grep sufficient", "small codebase"), but fill text guidance ("No dismissive No — justify by task scope") is needed for the long tail.
+  Confidence: 0.95
+  Implication: Banned_words can catch the most common dismissive patterns ("grep sufficient", "small codebase"), but fill text guidance ("No dismissive No — justify by task scope") is needed for the long tail.
 
 ### Gaps
 
@@ -216,7 +216,7 @@ diff /Users/maksim/repos/docfence/.docfence/types/plan.toml /Users/maksim/repos/
 
 ## Bottom Line
 
-- **Per-step confidence**: 0.91 (average)
-- **Key risk**: `pi --skills` / `pi --tools` might not be stable/guaranteed commands — need to verify.
-- **Gap**: Procedural enforcement (fill text + SKILL.md) won't catch all mistakes at validation time — only at authoring time. Banned words catch common dismissive patterns but not novel ones.
-- **Recommendation**: proceed — low-code fix (text/banned_words changes in 4 files), addresses two root causes: ambiguous enumeration source and dismissive "No" justifications.
+- Per-step confidence: 0.91 (average)
+- Key risk: `pi --skills` / `pi --tools` might not be stable/guaranteed commands — need to verify.
+- Gap: Procedural enforcement (fill text + SKILL.md) won't catch all mistakes at validation time — only at authoring time. Banned words catch common dismissive patterns but not novel ones.
+- Recommendation: proceed — low-code fix (text/banned_words changes in 4 files), addresses two root causes: ambiguous enumeration source and dismissive "No" justifications.

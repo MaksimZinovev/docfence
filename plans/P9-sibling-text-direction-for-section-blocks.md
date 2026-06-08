@@ -45,16 +45,16 @@ type: plan
 max_chars: 20000
 banned_words: [N/A, n/a]
 match:
-  min_3_ynp: '^- \*\*[^*]+\*\*: (Yes|No|Possibly)\b'
+  min_3_ynp: '^- .+: (Yes|No|Possibly)\b'
 ```
 
-- **grounded-planning**: Yes — this plan uses the plan format with docfence validation
-- **verification-before-completion**: Yes — verify spec block placement works by re-validating orient plan
-- **root-cause-tracing**: No — root cause already identified (sibling_text direction mismatch)
-- **systematic-debugging**: No — bug is understood, fix is mechanical
-- **cx/ck**: Yes — search for all documents with section-level spec blocks to inventory reformatting scope
-- **skill-creator**: No — no skill creation involved
-- **commit**: Possibly — if multi-file commit coordination needed
+- grounded-planning: Yes — this plan uses the plan format with docfence validation
+- verification-before-completion: Yes — verify spec block placement works by re-validating orient plan
+- root-cause-tracing: No — root cause already identified (sibling_text direction mismatch)
+- systematic-debugging: No — bug is understood, fix is mechanical
+- cx/ck: Yes — search for all documents with section-level spec blocks to inventory reformatting scope
+- skill-creator: No — no skill creation involved
+- commit: Possibly — if multi-file commit coordination needed
 
 ## Approach
 
@@ -75,13 +75,13 @@ type: plan
 max_chars: 20000
 banned_words: [Nothing., None., N/A, n/a, Not applicable]
 match:
-  has_justification: '^- \*\*[^*]+\*\*:'
-  min_2_exclusions: '^- \*\*[^*]+\*\*:'
+  has_justification: '^- .+:'
+  min_2_exclusions: '^- .+:'
 ```
 
-- **Changing `sibling_text` semantics in loader.py**: Top-of-section makes this unnecessary; consistent "text after block" semantics are clearer.
-- **P8 (scope leak for required_sections/placeholders)**: Separate fix, should merge first to eliminate 45 errors and make the remaining 12 match errors visible.
-- **Changing how document-level spec blocks work**: They already sit at top (after frontmatter) and work correctly — no change needed.
+- Changing `sibling_text` semantics in loader.py: Top-of-section makes this unnecessary; consistent "text after block" semantics are clearer.
+- P8 (scope leak for required_sections/placeholders): Separate fix, should merge first to eliminate 45 errors and make the remaining 12 match errors visible.
+- Changing how document-level spec blocks work: They already sit at top (after frontmatter) and work correctly — no change needed.
 
 ## Steps
 
@@ -94,26 +94,26 @@ match:
   min_3_steps: '^- \[( |x)\]'
 ```
 
-- [ ] **Update scaffold generator to place spec blocks before df-todo blocks**: In `docfence.py`, change the scaffold rendering order for section-level spec blocks. Current order: `## Heading` → `[df-todo block]` → `[spec block]`. New order: `## Heading` → `[spec block]` → `[df-todo block]`.
+- [ ] Update scaffold generator to place spec blocks before df-todo blocks: In `docfence.py`, change the scaffold rendering order for section-level spec blocks. Current order: `## Heading` → `[df-todo block]` → `[spec block]`. New order: `## Heading` → `[spec block]` → `[df-todo block]`.
   - Evidence: The scaffold generator in `docfence.py` renders sections by iterating `template_vars.sections`. The spec block and df-todo block are rendered per section. Swapping their order is a small change in the rendering logic. (Source: docfence.py scaffold generator)
   - Confidence: 0.90
   - Details: Find the section rendering loop and swap the order of spec block and df-todo block emission. The spec block should come first (after heading), then the df-todo block, then a blank line for content.
 
-- [ ] **Reformat orient-startup-race.md**: Move each section's spec block from end-of-section to top-of-section (immediately after `## Heading`). This is a mechanical cut-paste per section — 5 spec blocks to move. Keep df-todo blocks (if any) after the spec block.
+- [ ] Reformat orient-startup-race.md: Move each section's spec block from end-of-section to top-of-section (immediately after `## Heading`). This is a mechanical cut-paste per section — 5 spec blocks to move. Keep df-todo blocks (if any) after the spec block.
   - Evidence: orient-startup-race.md has 5 section-level spec blocks at lines L42, L54, L69, L109, L128 — all at section ends. Moving each to after its `##` heading is straightforward. (Source: orient-startup-race.md)
   - Confidence: 0.95
   - Details: For each section: cut the spec block from end, paste after `## Heading` line. No content changes needed.
 
-- [ ] **Reformat P2 and P8 plans**: Same mechanical reformatting for the other 2 plan documents in pi-agent-config. P1, P3, P4 plans also if they have section-level spec blocks.
+- [ ] Reformat P2 and P8 plans: Same mechanical reformatting for the other 2 plan documents in pi-agent-config. P1, P3, P4 plans also if they have section-level spec blocks.
   - Evidence: P2-format-reference-validation-loop.md has section-level spec blocks that need moving. P8 (this file) has them too. (Source: pi-agent-config/plans/)
   - Confidence: 0.90
 
-- [ ] **Validate orient-startup-race.md: confirm 0 section-level match errors**: After reformatting, run `docfence validate`. The 12 match errors should all resolve because `sibling_text` now contains the actual section content.
+- [ ] Validate orient-startup-race.md: confirm 0 section-level match errors: After reformatting, run `docfence validate`. The 12 match errors should all resolve because `sibling_text` now contains the actual section content.
   - Evidence: Tools & Skills has 6 Y/N/P entries matching `min_3_ynp`. Approach has "alternative" matching `has_alternative`. Out of Scope has 4 items with bold-colon format. Steps has 5 checklist items. (Source: orient-startup-race.md content)
   - Confidence: 0.90
   - Details: `cd /Users/maksim/repos/pi-agent-config && python -m docfence validate plans/orient-startup-race.md`
 
-- [ ] **Generate fresh scaffold and verify spec block placement**: Run `docfence new plan` and confirm that section-level spec blocks appear immediately after `##` headings, before df-todo blocks.
+- [ ] Generate fresh scaffold and verify spec block placement: Run `docfence new plan` and confirm that section-level spec blocks appear immediately after `##` headings, before df-todo blocks.
   - Evidence: The scaffold generator change (step 1) should produce the new ordering. (Source: docfence.py scaffold generator)
   - Confidence: 0.90
   - Details: `cd /Users/maksim/repos/docfence && python -m docfence new plan` and inspect output.
@@ -141,12 +141,12 @@ type: plan
 max_chars: 20000
 banned_words: [None., N/A, Nothing to reuse, No reuse]
 match:
-  has_reuse_item: '^- \*\*[^*]+\*\*:'
+  has_reuse_item: '^- .+:'
 ```
 
-- **Existing `sibling_text` semantics**: No change needed — "text after block" already works when spec block is at top of section. (Source: loader.py L74)
-- **orient-startup-race.md as test fixture**: Already demonstrates the bug with 12 false match errors; same file validates the fix after reformatting.
-- **Scaffold generator existing structure**: The rendering loop already emits spec blocks and df-todo blocks per section — just need to swap their order.
+- Existing `sibling_text` semantics: No change needed — "text after block" already works when spec block is at top of section. (Source: loader.py L74)
+- orient-startup-race.md as test fixture: Already demonstrates the bug with 12 false match errors; same file validates the fix after reformatting.
+- Scaffold generator existing structure: The rendering loop already emits spec blocks and df-todo blocks per section — just need to swap their order.
 
 ## Evidence Pack
 
@@ -155,24 +155,24 @@ type: plan
 max_chars: 20000
 banned_words: [**Source**:, **Source:**]
 match:
-  has_evidence_claim: '^- \*\*Claim\*:'
-  has_confidence: '\*\*Confidence\*\*:'
+  has_evidence_claim: '^- Claim:'
+  has_confidence: 'Confidence:'
 ```
 
-- **Claim**: Moving spec blocks to top-of-section makes `sibling_text` contain the actual section content, fixing all 12 false-positive match errors.
+- Claim: Moving spec blocks to top-of-section makes `sibling_text` contain the actual section content, fixing all 12 false-positive match errors.
   Source: loader.py L74 — sibling_text is "content immediately following the block"; if spec block is at top, section content follows it
-  **Confidence**: 0.95
-  **Implication**: Zero code changes to loader.py or validator.py. Only scaffold generator and document reformatting.
+  Confidence: 0.95
+  Implication: Zero code changes to loader.py or validator.py. Only scaffold generator and document reformatting.
 
-- **Claim**: Top-of-section is semantically consistent with document-level spec blocks, which already sit at top (after frontmatter).
+- Claim: Top-of-section is semantically consistent with document-level spec blocks, which already sit at top (after frontmatter).
   Source: All existing plan documents — document-level spec block is always the first block after frontmatter, before any content
-  **Confidence**: 1.0
-  **Implication**: No confusing "sometimes before, sometimes after" semantics for `sibling_text`.
+  Confidence: 1.0
+  Implication: No confusing "sometimes before, sometimes after" semantics for `sibling_text`.
 
-- **Claim**: The reformatting affects ~9 documents total (5 in pi-agent-config, 4+ in docfence), all mechanical cut-paste operations.
+- Claim: The reformatting affects ~9 documents total (5 in pi-agent-config, 4+ in docfence), all mechanical cut-paste operations.
   Source: docfence/plans/ and pi-agent-config/plans/ inventories
-  **Confidence**: 0.85
-  **Implication**: 30 minutes of mechanical editing. Low risk, easy to verify.
+  Confidence: 0.85
+  Implication: 30 minutes of mechanical editing. Low risk, easy to verify.
 
 ### Gaps
 
@@ -205,7 +205,7 @@ cd /Users/maksim/repos/pi-agent-config && python -m docfence validate plans/P2-f
 
 ## Bottom Line
 
-- **Per-step confidence**: 0.91 (average)
-- **Key risk**: df-todo blocks between spec block and content may affect `sibling_text` — need to verify they're excluded (they should be since they're fenced blocks).
-- **Gap**: Haven't inventoried all existing plan documents for section-level spec blocks.
-- **Recommendation**: proceed — zero code changes to validation engine, consistent semantics, mechanical document reformatting.
+- Per-step confidence: 0.91 (average)
+- Key risk: df-todo blocks between spec block and content may affect `sibling_text` — need to verify they're excluded (they should be since they're fenced blocks).
+- Gap: Haven't inventoried all existing plan documents for section-level spec blocks.
+- Recommendation: proceed — zero code changes to validation engine, consistent semantics, mechanical document reformatting.
