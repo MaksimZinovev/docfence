@@ -48,11 +48,15 @@ banned_words = [
 has_problem = '(problem|issue|bug|break|fail|cannot|does.not|unable)'
 
 [template_vars.sections."Tools & Skills"]
-fill = "[REPLACE] Enumerate from three sources first: Skills (ls -1 ~/.pi/agent/skills/ .pi/skills/ 2>/dev/null), MCP (mcporter list), CLI (~/.pi/agent/skills/cli-tool-discovery/tool/ai-tooling). Then audit each discovered tool. Three categories: Skills, MCP, CLI. Format: name (category): Yes (must use) / No (not needed by task scope) / Possibly (when you'd use it). Minimum 3 entries. No N/A. No file references. No dismissive No."
+fill = "[REPLACE] Enumerate from three sources first: Skills (ls -1 ~/.pi/agent/skills/ .pi/skills/ 2>/dev/null), MCP (mcporter list), CLI (~/.pi/agent/skills/cli-tool-discovery/tool/ai-tooling). Then audit each discovered tool. Only entries from the three enumeration sources belong here. Do not list Pi built-in tools (read, write, bash, grep, find, ast_grep_search, lsp_diagnostics, etc.) — they are always available. Three categories: Skills, MCP, CLI. Every entry must come from the enumeration commands above — no entries from memory or assumption. Format: name (category): Yes (must use) / No (not needed by task scope) / Possibly (when you'd use it). Minimum 3 entries. No N/A. No file references. No dismissive No."
 banned_words = ["N/A", "n/a", "grep sufficient", "small codebase", "simple enough", "overkill for"]
 
 [template_vars.sections."Tools & Skills".match]
 min_3_ynp = '^- .+: (Yes|No|Possibly)\b'
+has_cx = '\bcx\b.*\(Skills\).*: Yes\b'
+has_ck = '\bck\b.*\(Skills\).*: Yes\b'
+has_gh = '\bgh\b.*\(CLI\).*: Yes\b'
+has_deepwiki = 'deepwiki.*\(MCP\).*: Yes\b'
 
 [template_vars.sections.Approach]
 fill = "[REPLACE] Recommended direction and rationale — why this over alternatives? Max ~10 lines."
