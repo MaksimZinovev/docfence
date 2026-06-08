@@ -304,11 +304,18 @@ def _generate_scaffold(
         # df-todo block
         todo = f'```df-todo\nname = "{slug}"\nfill = "{fill}"\n```'
 
-        # section spec block — placeholders rule is document-scope only
+        # section spec block — per-section rules override defaults;
+        # match is included only when explicitly defined in section config
         sec_rules: dict[str, object] = {"type": doc_type}
         for key in ("max_chars", "banned_words"):
-            if key in defaults:
+            # per-section override wins, then fall back to type default
+            if key in sec_cfg:
+                sec_rules[key] = sec_cfg[key]
+            elif key in defaults:
                 sec_rules[key] = defaults[key]
+        # per-section match rules — only when explicitly defined in section config
+        if "match" in sec_cfg:
+            sec_rules["match"] = sec_cfg["match"]
         sec_spec_lines = ["```spec"]
         for k, v in sec_rules.items():
             sec_spec_lines.append(_format_spec_kv(k, v))
