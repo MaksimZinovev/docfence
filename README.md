@@ -183,6 +183,38 @@ max_chars: 5000
 ```
 ````
 
+### Section-level spec block placement
+
+Section-level spec blocks validate the text **after** them. Place them at the
+**top of the section** (immediately after the `##` heading), before any content
+or df-todo blocks:
+
+````markdown
+## Context
+
+```spec
+type: plan
+banned_words: [possibly, perhaps]
+match:
+  has_problem: '(problem|issue|bug)'
+```
+
+The actual section content goes here...
+````
+
+If a spec block is at the **end** of a section, the validator sees empty text
+and all match rules produce false positives. docfence will emit a 💡 **hint**
+when it detects this:
+
+```
+💡 spec-placement: spec block has no content after it — move to top of section
+  so validation sees the section content. See README: Section-level spec blocks
+```
+
+The scaffold generator (`docfence new <type>`) already places spec blocks at the
+top of each section — you only need to worry about this when editing existing
+documents.
+
 ## All Rules
 
 | field                     | example                              | what it checks                                 |
@@ -210,10 +242,11 @@ match:
 Each `label: pattern` entry must match at least one line. Use `(?i)` for
 case-insensitive matching. Errors reference the label, not the raw regex.
 
-## Warnings vs Errors
+## Warnings vs Errors vs Hints
 
 - **✗ ERR** — rule violation; `stamp` is blocked until fixed
 - **⚠ WARN** — inherited defaults or unknown type; worth reviewing, not a blocker
+- **💡 HINT** — advisory suggestion; not a blocker, often a migration nudge
 
 ## Block IDs
 

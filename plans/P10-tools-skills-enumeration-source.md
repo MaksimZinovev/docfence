@@ -28,8 +28,6 @@ match:
 
 ## Context
 
-The Tools & Skills section in P8 was filled with file references (`validator.py`, `plan.toml type`, `orient-startup-race.md`) instead of actual Pi skills and tools. The fill text in plan.toml says "List top ~10 relevant tools/skills" but never defines what a "tool" or "skill" means — the planner assumes any relevant artifact counts. format.md doesn't clarify this either. The match rule `has_ynp_format` only checks bullet formatting, not whether items are actual skills/tools from the Pi ecosystem. This will recur every time a plan is written unless the type definition and skill instructions make the enumeration source explicit. (Source: P8 Tools & Skills section before annotation fix, plan.toml fill text L36)
-
 ```spec
 type: plan
 max_chars: 20000
@@ -38,15 +36,9 @@ match:
   has_problem: '(problem|issue|bug|break|fail|cannot|does.not|unable)'
 ```
 
-## Tools & Skills
+The Tools & Skills section in P8 was filled with file references (`validator.py`, `plan.toml type`, `orient-startup-race.md`) instead of actual Pi skills and tools. The fill text in plan.toml says "List top ~10 relevant tools/skills" but never defines what a "tool" or "skill" means — the planner assumes any relevant artifact counts. format.md doesn't clarify this either. The match rule `has_ynp_format` only checks bullet formatting, not whether items are actual skills/tools from the Pi ecosystem. This will recur every time a plan is written unless the type definition and skill instructions make the enumeration source explicit. (Source: P8 Tools & Skills section before annotation fix, plan.toml fill text L36)
 
-- **grounded-planning**: Yes — this plan modifies the plan type and planning skill
-- **skill-creator**: Yes — updating SKILL.md for grounded-planning
-- **verification-before-completion**: Yes — validate scaffold and existing plans after changes
-- **cx/ck**: Possibly — if searching for other references to the fill text
-- **systematic-debugging**: No — no investigation needed
-- **root-cause-tracing**: No — root cause is clear (ambiguous fill text)
-- **commit**: Possibly — multi-repo commit coordination
+## Tools & Skills
 
 ```spec
 type: plan
@@ -56,9 +48,15 @@ match:
   min_3_ynp: '^- \*\*[^*]+\*\*: (Yes|No|Possibly)\b'
 ```
 
-## Approach
+- **grounded-planning**: Yes — this plan modifies the plan type and planning skill
+- **skill-creator**: Yes — updating SKILL.md for grounded-planning
+- **verification-before-completion**: Yes — validate scaffold and existing plans after changes
+- **cx/ck**: Possibly — if searching for other references to the fill text
+- **systematic-debugging**: No — no investigation needed
+- **root-cause-tracing**: No — root cause is clear (ambiguous fill text)
+- **commit**: Possibly — multi-repo commit coordination
 
-Make the enumeration source explicit in three places: (1) plan.toml fill text must state "Pi skills from `pi --skills` and tools from `pi --tools`", (2) format.md must document what counts as a valid entry, (3) SKILL.md must instruct the planner to run `pi --skills` and `pi --tools` before filling the section. An alternative — adding a match rule that validates entries against a known skill list — is brittle: skills change, and regex can't check membership against a dynamic list. Instead, the match rule stays format-only (Y/N/P structure) and the skill instructions enforce correctness procedurally.
+## Approach
 
 ```spec
 type: plan
@@ -68,12 +66,9 @@ match:
   has_alternative: '(alternative|instead of|rather than|compared to|over:|vs[.])'
 ```
 
-## Out of Scope
+Make the enumeration source explicit in three places: (1) plan.toml fill text must state "Pi skills from `pi --skills` and tools from `pi --tools`", (2) format.md must document what counts as a valid entry, (3) SKILL.md must instruct the planner to run `pi --skills` and `pi --tools` before filling the section. An alternative — adding a match rule that validates entries against a known skill list — is brittle: skills change, and regex can't check membership against a dynamic list. Instead, the match rule stays format-only (Y/N/P structure) and the skill instructions enforce correctness procedurally.
 
-- **Adding a match rule for skill/tool membership**: Regex can't validate against a dynamic list. Procedural enforcement via SKILL.md is sufficient.
-- **Changing Y/N/P format**: The format works; the problem is what items qualify, not how they're formatted.
-- **Auto-generating Tools & Skills from `pi --skills` output**: Would be a future enhancement (script that scaffolds the section from actual skill tree), not this fix.
-- **P8 and P9 fixes**: Separate plans.
+## Out of Scope
 
 ```spec
 type: plan
@@ -84,7 +79,21 @@ match:
   min_2_exclusions: '^- \*\*[^*]+\*\*:'
 ```
 
+- **Adding a match rule for skill/tool membership**: Regex can't validate against a dynamic list. Procedural enforcement via SKILL.md is sufficient.
+- **Changing Y/N/P format**: The format works; the problem is what items qualify, not how they're formatted.
+- **Auto-generating Tools & Skills from `pi --skills` output**: Would be a future enhancement (script that scaffolds the section from actual skill tree), not this fix.
+- **P8 and P9 fixes**: Separate plans.
+
 ## Steps
+
+```spec
+type: plan
+max_chars: 20000
+banned_words: [**Step, **Task, **Phase]
+match:
+  has_step_evidence: '^- \[ \].*\(Source'
+  min_3_steps: '^- \[( |x)\]'
+```
 
 - [ ] **Update plan.toml fill text for Tools & Skills section**: Change from generic "tools/skills" to explicit "Pi skills and tools". Current: `"[REPLACE] List top ~10 relevant tools/skills: **name**: Yes / No (why not needed) / Possibly (when you'd use it). Minimum 3 entries. No N/A."` — New: `"[REPLACE] List Pi skills from pi --skills and tools from pi --tools: **skill-name**: Yes / No (reason) / Possibly (when). Minimum 3 entries. No N/A. No file references. No dismissive 'No' — justify by task scope."`
   - Evidence: The current fill text never defines "tools/skills" as Pi ecosystem items — planner fills with whatever seems relevant, including file paths. Also, "No" reasons like "codebase is small" are dismissive — they say "I didn't think about it" rather than "it's categorically irrelevant to this task's scope." (Source: plan.toml fill text, P8 annotation feedback: "this is not an excuse")
@@ -116,21 +125,7 @@ match:
   - Confidence: 0.95
   - Details: `cp /Users/maksim/repos/docfence/.docfence/types/plan.toml /Users/maksim/repos/pi-agent-config/.docfence/types/plan.toml`
 
-```spec
-type: plan
-max_chars: 20000
-banned_words: [**Step, **Task, **Phase]
-match:
-  has_step_evidence: '^- \[ \].*\(Source'
-  min_3_steps: '^- \[( |x)\]'
-```
-
 ## Files to Modify
-
-- `docfence/.docfence/types/plan.toml` — UPDATED: change Tools & Skills fill text to reference Pi skills/tools explicitly; add banned words for file references
-- `pi-agent-config/.docfence/types/plan.toml` — UPDATED: synced copy of above
-- `pi-agent-config/skills/grounded-planning/references/format.md` — UPDATED: add valid/invalid entry examples for Tools & Skills section
-- `pi-agent-config/skills/grounded-planning/SKILL.md` — UPDATED: add skill enumeration step before filling Tools & Skills
 
 ```spec
 type: plan
@@ -140,11 +135,12 @@ match:
   has_file_marker: '(CREATED|UPDATED|DELETED)'
 ```
 
-## Reuse
+- `docfence/.docfence/types/plan.toml` — UPDATED: change Tools & Skills fill text to reference Pi skills/tools explicitly; add banned words for file references and dismissive "No" patterns
+- `pi-agent-config/.docfence/types/plan.toml` — UPDATED: synced copy of above
+- `pi-agent-config/skills/grounded-planning/references/format.md` — UPDATED: add valid/invalid entry examples for Tools & Skills section
+- `pi-agent-config/skills/grounded-planning/SKILL.md` — UPDATED: add skill enumeration step before filling Tools & Skills
 
-- **Existing `has_ynp_format` match rule**: Correctly validates Y/N/P structure — no change needed. The fix is about what items qualify, not format. (Source: plan.toml match rules)
-- **Existing banned_words mechanism**: Can add file-extension patterns to catch file references in the section. (Source: plan.toml section-level banned_words)
-- **P8 annotation feedback**: The corrected Tools & Skills section in P8 (after user fix) serves as a reference example of what a valid entry list looks like. (Source: P8 Tools & Skills after fix)
+## Reuse
 
 ```spec
 type: plan
@@ -154,7 +150,20 @@ match:
   has_reuse_item: '^- \*\*[^*]+\*\*:'
 ```
 
+- **Existing `has_ynp_format` match rule**: Correctly validates Y/N/P structure — no change needed. The fix is about what items qualify, not format. (Source: plan.toml match rules)
+- **Existing banned_words mechanism**: Can add file-extension patterns to catch file references in the section. (Source: plan.toml section-level banned_words)
+- **P8 annotation feedback**: The corrected Tools & Skills section in P8 (after user fix) serves as a reference example of what a valid entry list looks like. (Source: P8 Tools & Skills after fix)
+
 ## Evidence Pack
+
+```spec
+type: plan
+max_chars: 20000
+banned_words: [**Source**:, **Source:**]
+match:
+  has_evidence_claim: '^- \*\*Claim\*:'
+  has_confidence: '\*\*Confidence\*\*:'
+```
 
 - **Claim**: The root cause is ambiguous fill text — "tools/skills" is undefined, so the planner fills with whatever seems relevant including file references.
   Source: plan.toml fill text: `[REPLACE] List top ~10 relevant tools/skills` — no definition of what qualifies
@@ -180,15 +189,6 @@ match:
 
 - Haven't validated that `pi --skills` and `pi --tools` are reliable commands that always produce a usable skill/tool list. Should verify before committing to this approach.
 - The fill text change won't retroactively fix existing plans — only P8 was manually corrected via annotation.
-
-```spec
-type: plan
-max_chars: 20000
-banned_words: [**Source**:, **Source:**]
-match:
-  has_evidence_claim: '^- \*\*Claim\*:'
-  has_confidence: '\*\*Confidence\*\*:'
-```
 
 ## Verification
 

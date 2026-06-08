@@ -32,7 +32,7 @@ NON_RULE_KEYS = {
 class Issue:
     path: Path
     line: int
-    level: str  # "error" or "warn"
+    level: str  # "error", "warn", or "hint"
     rule: str = ""  # e.g. "banned_words", "status", "frontmatter"
     message: str = ""
     context: str = ""  # e.g. "allowed: draft, active, frozen, done"
@@ -41,7 +41,7 @@ class Issue:
         tag = (
             "ERR "
             if self.level == "error"
-            else ("WARN" if self.level == "warn" else "PASS")
+            else ("WARN" if self.level == "warn" else ("HINT" if self.level == "hint" else "PASS"))
         )
         return f"{tag} {self.path}:{self.line} — {self.message}"
 
@@ -159,6 +159,7 @@ def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list
             )
 
         # run rules
+        block_match_errors = 0
         for rule_key, rule_value in effective_rules.items():
             fn = RULES.get(rule_key)
             if fn:
@@ -173,6 +174,8 @@ def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list
                             message=msg,
                         )
                     )
+                    if rule_key == "match":
+                        block_match_errors += 1
                 if not errors and verbose:
                     issues.append(
                         Issue(
@@ -183,6 +186,25 @@ def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list
                             message=_pass_message(rule_key, rule_value),
                         )
                     )
+
+        # hint: section-scope block with empty sibling_text and match errors
+        # likely has spec block at end of section instead of top
+        if (
+            block.scope != "document"
+            and block_match_errors > 0
+            and len(block.sibling_text.strip()) < 20
+        ):
+            issues.append(
+                Issue(
+                    doc.path,
+                    block.line_number,
+                    "hint",
+                    rule="spec-placement",
+                    message="spec block has no content after it — move to top of section "
+                    "so validation sees the section content. "
+                    "See README: Section-level spec blocks",
+                )
+            )
 
     return issues
 

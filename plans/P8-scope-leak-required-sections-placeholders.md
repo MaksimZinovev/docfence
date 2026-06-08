@@ -28,8 +28,6 @@ match:
 
 ## Context
 
-Section-level spec blocks inherit `required_sections` and `placeholders` from type defaults, causing nonsensical errors like "required section missing: Context" *inside* the Context section itself. This is the same scope leak that was fixed for `match` (validator.py already blocks `match` inheritance at section scope), but `required_sections` and `placeholders` were missed. Running `docfence validate` on orient-startup-race.md produces 45 spurious `required_sections` errors — all from section-level spec blocks inheriting a document-level rule. (Source: validator.py L84-88 — only `match` is filtered by scope)
-
 ```spec
 type: plan
 max_chars: 20000
@@ -38,15 +36,9 @@ match:
   has_problem: '(problem|issue|bug|break|fail|cannot|does.not|unable)'
 ```
 
-## Tools & Skills
+Section-level spec blocks inherit `required_sections` and `placeholders` from type defaults, causing nonsensical errors like "required section missing: Context" *inside* the Context section itself. This is the same scope leak that was fixed for `match` (validator.py already blocks `match` inheritance at section scope), but `required_sections` and `placeholders` were missed. Running `docfence validate` on orient-startup-race.md produces 45 spurious `required_sections` errors — all from section-level spec blocks inheriting a document-level rule. (Source: validator.py L84-88 — only `match` is filtered by scope)
 
-- **grounded-planning**: Yes — this plan uses the plan format and docfence validation loop
-- **root-cause-tracing**: Yes — used to identify scope leak as root cause of 45 false errors
-- **verification-before-completion**: Yes — verify fix against orient-startup-race.md before declaring done
-- **systematic-debugging**: No — root cause already identified, no further investigation needed
-- **skill-creator**: No — no skill creation involved
-- **cx/ck**: Yes — search for other rule keys that may also leak at section scope
-- **mcp: github-cli**: Possibly — if commit/pr workflow needed
+## Tools & Skills
 
 ```spec
 type: plan
@@ -56,9 +48,15 @@ match:
   min_3_ynp: '^- \*\*[^*]+\*\*: (Yes|No|Possibly)\b'
 ```
 
-## Approach
+- **grounded-planning**: Yes — this plan uses the plan format and docfence validation loop
+- **root-cause-tracing**: Yes — used to identify scope leak as root cause of 45 false errors
+- **verification-before-completion**: Yes — verify fix against orient-startup-race.md before declaring done
+- **systematic-debugging**: No — root cause already identified, no further investigation needed
+- **skill-creator**: No — no skill creation involved
+- **cx/ck**: Yes — search for other rule keys that may also leak at section scope
+- **mcp: github-cli**: Possibly — if commit/pr workflow needed
 
-Extend the existing scope filter in validator.py to block `required_sections` and `placeholders` from inheriting into section-level spec blocks, exactly like `match` is already blocked. The fix is 2 lines added to the existing scope check. An alternative — splitting defaults into `[defaults.document]` and `[defaults.section]` in the TOML format — is a larger change that should be a separate enhancement (H5 in SKILL.md).
+## Approach
 
 ```spec
 type: plan
@@ -68,11 +66,9 @@ match:
   has_alternative: '(alternative|instead of|rather than|compared to|over:|vs[.])'
 ```
 
-## Out of Scope
+Extend the existing scope filter in validator.py to block `required_sections` and `placeholders` from inheriting into section-level spec blocks, exactly like `match` is already blocked. The fix is 2 lines added to the existing scope check. An alternative — splitting defaults into `[defaults.document]` and `[defaults.section]` in the TOML format — is a larger change that should be a separate enhancement (H5 in SKILL.md).
 
-- **Splitting `[defaults]` into `[defaults.document]` and `[defaults.section]`**: Separate enhancement per H5 heuristic; this fix doesn't block it.
-- **Changing how section-level spec blocks get typed**: Current auto-detection (inherit type from frontmatter) works fine.
-- **Fixing Bug 2 (sibling_text direction)**: Separate plan (P9).
+## Out of Scope
 
 ```spec
 type: plan
@@ -83,7 +79,20 @@ match:
   min_2_exclusions: '^- \*\*[^*]+\*\*:'
 ```
 
+- **Splitting `[defaults]` into `[defaults.document]` and `[defaults.section]`**: Separate enhancement per H5 heuristic; this fix doesn't block it.
+- **Changing how section-level spec blocks get typed**: Current auto-detection (inherit type from frontmatter) works fine.
+- **Fixing Bug 2 (sibling_text direction)**: Separate plan (P9).
+
 ## Steps
+
+```spec
+type: plan
+max_chars: 20000
+banned_words: [**Step, **Task, **Phase]
+match:
+  has_step_evidence: '^- \[ \].*\(Source'
+  min_3_steps: '^- \[( |x)\]'
+```
 
 - [ ] **Add `required_sections` and `placeholders` to the scope filter in validator.py**: In the `for rule_key in RULES` loop (L79-91), extend the existing `match` scope check to also filter `required_sections` and `placeholders`. Change `if rule_key == "match" and block.scope != "document":` to `if rule_key in ("match", "required_sections", "placeholders") and block.scope != "document":`.
   - Evidence: The scope filter already exists for `match` at L84-88. Adding 2 more keys to the check is minimal and consistent. (Source: validator.py L84-88)
@@ -99,18 +108,7 @@ match:
   - Evidence: The scope filter only blocks inheritance at section scope. Document-level blocks with explicit `required_sections` in cfg are unaffected. (Source: validator.py L80-81 — explicit block rules win over defaults)
   - Confidence: 0.95
 
-```spec
-type: plan
-max_chars: 20000
-banned_words: [**Step, **Task, **Phase]
-match:
-  has_step_evidence: '^- \[ \].*\(Source'
-  min_3_steps: '^- \[( |x)\]'
-```
-
 ## Files to Modify
-
-- `docfence/core/validator.py` — UPDATED: extend scope filter from `match`-only to include `required_sections` and `placeholders` at L84
 
 ```spec
 type: plan
@@ -120,10 +118,9 @@ match:
   has_file_marker: '(CREATED|UPDATED|DELETED)'
 ```
 
-## Reuse
+- `docfence/core/validator.py` — UPDATED: extend scope filter from `match`-only to include `required_sections` and `placeholders` at L84
 
-- **Existing scope filter pattern**: The `match` scope filter at L84-88 is the exact pattern to extend — no new code structure needed. (Source: validator.py L84-88)
-- **orient-startup-race.md as test fixture**: Already exists, already demonstrates the bug, will validate the fix.
+## Reuse
 
 ```spec
 type: plan
@@ -133,7 +130,19 @@ match:
   has_reuse_item: '^- \*\*[^*]+\*\*:'
 ```
 
+- **Existing scope filter pattern**: The `match` scope filter at L84-88 is the exact pattern to extend — no new code structure needed. (Source: validator.py L84-88)
+- **orient-startup-race.md as test fixture**: Already exists, already demonstrates the bug, will validate the fix.
+
 ## Evidence Pack
+
+```spec
+type: plan
+max_chars: 20000
+banned_words: [**Source**:, **Source:**]
+match:
+  has_evidence_claim: '^- \*\*Claim\*:'
+  has_confidence: '\*\*Confidence\*\*:'
+```
 
 - **Claim**: `required_sections` and `placeholders` inherit into section-level spec blocks, producing 45 spurious errors on orient-startup-race.md.
   Source: validator.py L79-91 — the inheritance loop has no scope filter for these two keys, only for `match`
@@ -149,15 +158,6 @@ match:
   Source: validator.py L84
   **Confidence**: 1.0
   **Implication**: Minimal change, easy to review, low regression risk.
-
-```spec
-type: plan
-max_chars: 20000
-banned_words: [**Source**:, **Source:**]
-match:
-  has_evidence_claim: '^- \*\*Claim\*:'
-  has_confidence: '\*\*Confidence\*\*:'
-```
 
 ## Verification
 

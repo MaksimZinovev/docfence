@@ -148,6 +148,7 @@ def load_doc(path: Path) -> ParsedDoc | None:
     blocks: list[SpecBlock] = []
 
     _SPEC_BLOCK_RE = re.compile(r"```spec\n.*?\n```\s*", re.DOTALL)
+    _DF_TODO_RE = re.compile(r"```df-todo\n.*?\n```\s*", re.DOTALL)
 
     for raw_toml, sibling, ln in raw_blocks:
         try:
@@ -161,6 +162,7 @@ def load_doc(path: Path) -> ParsedDoc | None:
         else:
             # strip any nested spec block fences from sibling text
             effective_sibling = _SPEC_BLOCK_RE.sub("", sibling).strip()
+            effective_sibling = _DF_TODO_RE.sub("", effective_sibling).strip()
         blocks.append(
             SpecBlock(
                 cfg=cfg,

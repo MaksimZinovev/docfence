@@ -82,6 +82,7 @@ def _render_tree(issues: list[Issue], target: Path, verbose: bool = False):
     files = list(target.rglob("*.md")) if target.is_dir() else [target]
     errors = [i for i in issues if i.level == "error"]
     warns = [i for i in issues if i.level == "warn"]
+    hints = [i for i in issues if i.level == "hint"]
     passes = [i for i in issues if i.level == "pass"]
 
     # group issues by file
@@ -108,7 +109,7 @@ def _render_tree(issues: list[Issue], target: Path, verbose: bool = False):
         is_last_file = idx == len(ordered_files) - 1
         file_issues = by_file.get(fpath, [])
         file_errors = [i for i in file_issues if i.level == "error"]
-        file_warns = [i for i in file_issues if i.level == "warn"]
+        file_warns = [i for i in file_issues if i.level in ("warn", "hint")]
 
         if file_errors:
             tag = c("✗", RED, BOLD)
@@ -199,6 +200,8 @@ def _render_tree(issues: list[Issue], target: Path, verbose: bool = False):
                     sym = c("✗", RED)
                 elif issue.level == "pass":
                     sym = c("✓", GREEN)
+                elif issue.level == "hint":
+                    sym = c("💡", YELLOW)
                 else:
                     sym = c("⚠", YELLOW)
                 text = f"{issue.rule}: {issue.message}" if issue.rule else issue.message
@@ -217,6 +220,9 @@ def _render_tree(issues: list[Issue], target: Path, verbose: bool = False):
         parts.append(f"{c(str(n_err), RED, BOLD)} error{'s' if n_err != 1 else ''}")
     if n_warn:
         parts.append(f"{c(str(n_warn), YELLOW)} warning{'s' if n_warn != 1 else ''}")
+    if hints:
+        n_hints = len(hints)
+        parts.append(f"{c(str(n_hints), YELLOW)} hint{'s' if n_hints != 1 else ''}")
     if verbose and n_pass:
         parts.append(f"{c(str(n_pass), GREEN)} passed")
     if not n_err and not n_warn and not verbose:
@@ -322,7 +328,7 @@ def _generate_scaffold(
         sec_spec_lines.append("```")
         sec_spec = "\n".join(sec_spec_lines)
 
-        section_blocks.append(f"## {name}\n\n{todo}\n\n{sec_spec}")
+        section_blocks.append(f"## {name}\n\n{sec_spec}\n\n{todo}")
 
     sections = "\n\n".join(section_blocks)
 
