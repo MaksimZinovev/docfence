@@ -1,10 +1,10 @@
 ---
 id: P11
 type: plan
-status: draft
+status: done
 owner: maksim
 depends_on: []
-last_validated: ~
+last_validated: 2026-06-11T00:00:00Z
 ---
 
 # Spec Checksum Integrity
@@ -281,6 +281,8 @@ All 7 steps completed. Commit `d87c971`.
 - Iron law banner on `--update-checksum` — agents must never run without user permission
 - `spec_checksum` hint suppressed when document has unfilled placeholders
 - Extra rule keys (inherited defaults) reported as hints, not errors
+**Review:** `reviews/P11-spec-checksum-integrity-review.md` — passed with blockers resolved.
+
 **Review fixes (post-review):**
 - Blocker fix: `cmd_stamp` fallback now uses `last_validated` anchor when `depends_on` is missing; guards against `None` checksum value
 - Guard added: stale `spec_checksum` with zero spec blocks now raises error (not silently ignored)

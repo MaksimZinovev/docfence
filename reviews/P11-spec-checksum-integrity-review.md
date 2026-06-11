@@ -113,15 +113,22 @@ Key findings from LLM review:
 
 4. **`cmd_stamp` elif branch: `new_checksum` can be `None`** — when `doc.spec_checksum` is falsy (which is why the `if` branch was skipped), the code still writes `spec_checksum: {new_checksum}` which could write `None` or empty into the file. This compounds the `depends_on` blocker already identified. **Verdict: confirms existing blocker; `new_checksum` should be checked before writing.**
 
+## Verification of Author Fixes
+
+All fixes from commit `345d782` verified:
+
+| Review Item | Claimed Fix | Verified |
+|---|---|---|
+| **Blocker 1a**: `depends_on` fallback | Now falls back to `last_validated` anchor | ✅ Regex works for both anchors |
+| **Blocker 1b**: `None` checksum written | `elif doc and doc.blocks and new_checksum:` guards against None | ✅ Guard present in source |
+| **Note 1**: Zero blocks stale checksum | New guard clause emits error when frontmatter has checksum but no blocks | ✅ Error: "spec_checksum present in frontmatter but no spec blocks found" |
+| **Note 5**: `str \| None` Python 3.9 | `from __future__ import annotations` added to `loader.py` | ✅ Line 6 confirmed; ParsedDoc instantiates with both None and string |
+| **Note 6**: `SpecBlock` defaults | All fields except `cfg` now have defaults | ✅ Verified via dataclass fields |
+| **Compile** | All 3 files | ✅ `py_compile` passes |
+| **Round-trip** | Checksum still matches | ✅ P11 checksum still `ecdb2eb6` |
+
+Notes 2, 3, 4 accepted as known trade-offs per author response.
+
 ## Summary
 
-Intent is well-served. The implementation delivers the two-layer defense as designed.
-
-**One blocker**: the `depends_on`-dependent regex in `cmd_stamp` will silently fail to add `spec_checksum` on documents without that frontmatter field. The LLM review confirmed a related issue: the elif branch can write `None` as the checksum value.
-
-**Three notes**: (1) stale `spec_checksum` with zero blocks undetected, (2) parallel checksum assembly in scaffold is fragile, (3) `str | None` requires Python 3.10+ — verify minimum version.
-
-Otherwise, solid work — the checksum round-trip is verified, coverage checks work, and the iron law banner is appropriately forceful.
-## Author Response
-
-Blocker fixed: `cmd_stamp` now falls back to `last_validated` anchor (not `depends_on`), guards `None` checksum. Stale checksum with zero spec blocks now raises error. `from __future__ import annotations` added for Python 3.9 compat. `SpecBlock` fields given defaults. Notes 2-4 accepted as known trade-offs. Commit on `feat/spec-checksum`.
+Intent is well-served. The implementation delivers the two-layer defense as designed. All blockers resolved. Three accepted trade-offs: (2) parallel checksum assembly fragility, (3) ±10 line tolerance, (4) noisy `max_chars` hints. **Review passed.**
