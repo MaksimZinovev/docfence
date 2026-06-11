@@ -4,8 +4,8 @@ Parses a markdown file into:
   - a list of SpecBlock dataclasses
 """
 
-import re
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -71,6 +71,7 @@ def _parse_kv(text: str) -> dict:
 @dataclass
 class SpecBlock:
     cfg: dict  # parsed TOML from inside the ```spec block
+    raw_toml: str  # raw TOML content of the spec block (for checksum computation)
     sibling_text: str  # content immediately following the block
     scope: str  # "document" or "section"
     bid: str  # sha256[:8] of sibling_text at parse time
@@ -87,6 +88,13 @@ class ParsedDoc:
     headings: dict[int, str] = field(
         default_factory=dict
     )  # line_number → heading text (H1, H2)
+    spec_checksum: str | None = None  # SHA-256[:8] of all spec blocks' raw TOML
+
+
+def _compute_spec_checksum(blocks: list[SpecBlock]) -> str:
+    """Compute SHA-256[:8] checksum from all spec blocks' raw TOML content."""
+    combined = "\n".join(block.raw_toml for block in blocks)
+    return hashlib.sha256(combined.encode()).hexdigest()[:8]
 
 
 def _sha8(text: str) -> str:
@@ -102,10 +110,17 @@ def _parse_frontmatter(text: str) -> tuple[dict, str]:
 
 
 def _extract_headings(text: str) -> dict[int, str]:
-    """Extract H1/H2 headings with their line numbers."""
+    """Extract H1/H2 headings with their line numbers, skipping fenced code blocks."""
     headings: dict[int, str] = {}
+    in_fence = False
     for i, line in enumerate(text.splitlines(), start=1):
         stripped = line.strip()
+        # track fenced code blocks (```, ~~~, and variants)
+        if stripped.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if stripped.startswith(("# ", "## ")):
             headings[i] = stripped
     return headings
@@ -166,6 +181,7 @@ def load_doc(path: Path) -> ParsedDoc | None:
         blocks.append(
             SpecBlock(
                 cfg=cfg,
+                raw_toml=raw_toml,
                 sibling_text=effective_sibling,
                 scope=scope,
                 bid=_sha8(effective_sibling),
@@ -173,10 +189,13 @@ def load_doc(path: Path) -> ParsedDoc | None:
             )
         )
 
+    spec_checksum = _compute_spec_checksum(blocks) if blocks else None
+
     return ParsedDoc(
         path=path,
         frontmatter=frontmatter,
         full_text=text,
         blocks=blocks,
         headings=headings,
+        spec_checksum=spec_checksum,
     )

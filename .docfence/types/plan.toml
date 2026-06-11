@@ -48,8 +48,15 @@ banned_words = [
 has_problem = '(problem|issue|bug|break|fail|cannot|does.not|unable)'
 
 [template_vars.sections."Tools & Skills"]
-fill = "[REPLACE] Enumerate from three sources first: Skills (ls -1 ~/.pi/agent/skills/ .pi/skills/ 2>/dev/null), MCP (mcporter list), CLI (~/.pi/agent/skills/cli-tool-discovery/tool/ai-tooling). Then audit each discovered tool. Only entries from the three enumeration sources belong here. Do not list Pi built-in tools (read, write, bash, grep, find, ast_grep_search, lsp_diagnostics, etc.) — they are always available. Three categories: Skills, MCP, CLI. Every entry must come from the enumeration commands above — no entries from memory or assumption. Format: name (category): Yes (must use) / No (not needed by task scope) / Possibly (when you'd use it). Minimum 3 entries. No N/A. No file references. No dismissive No."
-banned_words = ["N/A", "n/a", "grep sufficient", "small codebase", "simple enough", "overkill for"]
+fill = "[REPLACE] Ask yourself - Based on context of this task, what tools and skills would help me effieciently 1) plan and research 2) implement,  3) resolve issues when faced them, 4) verify and validate final result? ALWAYS account for needs to research, troubleshoot, leverage specialised skills and tools. Enumerate from three sources first: Skills (ls -1 ~/.pi/agent/skills/ .pi/skills/ 2>/dev/null), MCP (mcporter list), CLI (~/.pi/agent/skills/cli-tool-discovery/tool/ai-tooling). Then audit each discovered tool. Only entries from the three enumeration sources belong here. Three categories: Skills, MCP, CLI.  No entries from memory or assumption. Format: name (category): Yes (must use) / No (not needed by task scope) / Possibly (when you'd use it) - 1-line justification. Minimum 3 entries. No N/A. No file references. No dismissive No."
+banned_words = [
+  "N/A",
+  "n/a",
+  "grep sufficient",
+  "small codebase",
+  "simple enough",
+  "overkill for",
+]
 
 [template_vars.sections."Tools & Skills".match]
 min_3_ynp = '^- .+: (Yes|No|Possibly)\b'
@@ -82,7 +89,7 @@ banned_words = ["**Step", "**Task", "**Phase"]
 has_step_evidence = '^- \[ \].*\(Source'
 min_3_steps = '^- \[( |x)\]'
 
-[template_vars.segments."Files to Modify"]
+[template_vars.sections."Files to Modify"]
 fill = "[REPLACE] Tree of files to modify with inline comments: `path/to/file` — CREATED/UPDATED/DELETED: what changes and why"
 
 [template_vars.sections."Files to Modify".match]

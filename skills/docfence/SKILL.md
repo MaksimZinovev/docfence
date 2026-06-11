@@ -254,3 +254,29 @@ expected_errors = ["has_checklist"]
 - ❌ Write fill text from memory — use user's exact words
 - ❌ Change patterns without testing against existing documents
 - ❌ Skip scaffold-and-validate before declaring done
+
+---
+
+### H11: Spec Block Integrity → Never Remove or Modify Validation Rules
+
+**Failure:** Agent fills scaffolded content by deleting both the `df-todo` block AND the adjacent `spec` block. The document then "passes" validation — not because the content is correct, but because the rules checking it were silently removed.
+
+**This is the single most dangerous failure mode.** A document without its spec blocks is like a building without inspections — it looks fine on the surface but has no structural verification.
+
+**Rule:** When filling a scaffold, you **MUST** keep every `spec` block intact. Only delete the `df-todo` blocks — those are the placeholders you replace with content. The `spec` blocks define the validation rules for that section and are NOT optional.
+
+**DO:**
+- ✅ Delete `df-todo` blocks and replace with your content
+- ✅ Keep all `spec` blocks exactly as generated — they are validation rules, not suggestions
+- ✅ If a spec block's rules conflict with your content, fix the content — never remove the rule
+- ✅ After filling, run `docfence validate` — all original spec blocks must still be present
+- ✅ If you intentionally need to change a spec block, **ask the user first** — then run `docfence stamp --update-checksum` with their explicit approval
+
+**IRON LAW: `docfence stamp --update-checksum` must NEVER be run without explicit user permission.** This command rewrites the spec checksum, which is the tamper-evidence seal. Running it without asking is equivalent to breaking a seal and resealing it yourself — it defeats the entire integrity mechanism. Always ask. Always wait for approval.
+
+**DON'T:**
+- ❌ Delete `spec` blocks when filling content
+- ❌ Modify spec block rules (remove `match`, `banned_words`, `max_chars`) to make validation pass
+- ❌ Remove a spec block because "the section doesn't need validation" — that decision belongs in the type definition, not the document
+- ❌ Copy content from a scaffold and leave out the spec blocks
+- ❌ Run `docfence stamp --update-checksum` without asking the user first — this is an iron law, not a suggestion

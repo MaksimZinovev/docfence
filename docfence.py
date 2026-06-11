@@ -8,6 +8,8 @@ Usage examples:
   docfence new feature                      # print a blank template
   docfence types                            # list all known doc types
   docfence stamp docs/my-feature.md         # write last_validated timestamp
+  docfence stamp --update-checksum doc.md   # also refresh spec_checksum
+  docfence stamp --update-checksum --approved-by="username" doc.md
 
 Spec block syntax (place inside ```spec ... ``` fences in your .md):
 
@@ -33,6 +35,7 @@ Type definitions live in .docfence/types/<name>.toml — drop a new file to add
 a type without touching docfence core.
 """
 
+import hashlib
 import re
 import sys
 from datetime import datetime, timezone
@@ -282,7 +285,13 @@ def _generate_scaffold(
 
     # --- document-level spec block ---
     doc_rules: dict[str, object] = {"scope": "document", "type": doc_type}
-    for key in ("required_sections", "max_chars", "banned_words", "placeholders", "match"):
+    for key in (
+        "required_sections",
+        "max_chars",
+        "banned_words",
+        "placeholders",
+        "match",
+    ):
         if key in defaults:
             doc_rules[key] = defaults[key]
     if "placeholders" not in doc_rules:
@@ -332,6 +341,31 @@ def _generate_scaffold(
 
     sections = "\n\n".join(section_blocks)
 
+    # --- spec checksum ---
+    # collect all spec block raw TOML content and compute SHA-256[:8] checksum
+
+    all_raw_tomls = []
+    # document-level spec block
+    all_raw_tomls.append("\n".join(doc_spec_lines[1:-1]))  # strip fences
+    # section-level spec blocks
+    for name in section_names:
+        sec_cfg = sections_cfg.get(name, {})
+        sec_rules: dict[str, object] = {"type": doc_type}
+        for key in ("max_chars", "banned_words"):
+            if key in sec_cfg:
+                sec_rules[key] = sec_cfg[key]
+            elif key in defaults:
+                sec_rules[key] = defaults[key]
+        if "match" in sec_cfg:
+            sec_rules["match"] = sec_cfg["match"]
+        raw_lines = []
+        for k, v in sec_rules.items():
+            raw_lines.append(_format_spec_kv(k, v))
+        all_raw_tomls.append("\n".join(raw_lines))
+
+    combined = "\n".join(all_raw_tomls)
+    spec_checksum = hashlib.sha256(combined.encode()).hexdigest()[:8]
+
     return (
         f"---\n"
         f"id: {fm_id}\n"
@@ -339,6 +373,7 @@ def _generate_scaffold(
         f"status: {fm_status}\n"
         f"owner: {fm_owner}\n"
         f"depends_on: []\n"
+        f"spec_checksum: {spec_checksum}\n"
         f"last_validated: ~\n"
         f"---\n\n"
         f"# {fm_title}\n\n"
@@ -401,13 +436,82 @@ def cmd_types():
         print(f"  {t}")
 
 
-def cmd_stamp(target: str):
+def _log_checksum_update(
+    filepath: Path,
+    old_checksum: str,
+    new_checksum: str,
+    timestamp: str,
+    approved_by: str = "",
+) -> None:
+    """Append a checksum update entry to .docfence/checksum.log."""
+    doc = load_doc(filepath)
+    doc_id = doc.frontmatter.get("id", "(unknown)") if doc else "(unknown)"
+
+    # best-effort git commit hash
+    git_commit = "(none)"
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            git_commit = result.stdout.strip()
+    except Exception:
+        pass
+
+    # find .docfence directory
+    docfence_dir = filepath.parent / ".docfence"
+    if not docfence_dir.is_dir():
+        # walk up to find it
+        for parent in filepath.parents:
+            candidate = parent / ".docfence"
+            if candidate.is_dir():
+                docfence_dir = candidate
+                break
+    docfence_dir.mkdir(parents=True, exist_ok=True)
+    log_path = docfence_dir / "checksum.log"
+
+    entry = (
+        f"{timestamp} | {filepath.name} | id={doc_id} | "
+        f"{old_checksum} → {new_checksum} | git={git_commit}"
+    )
+    if approved_by:
+        entry += f" | approved_by={approved_by}"
+    entry += "\n"
+
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(entry)
+
+
+def cmd_stamp(target: str, update_checksum: bool = False, approved_by: str = ""):
     p = Path(target)
     if not p.exists():
         print(f"ERR  file not found: {target}")
         sys.exit(1)
+    if update_checksum:
+        print("""
+╔══════════════════════════════════════════════════════════════════╗
+║  ⚠️  spec_checksum UPDATE — IRON LAW CHECK                     ║
+║                                                                  ║
+║  Updating the spec checksum REWRITES the tamper-evidence seal.   ║
+║  This must NEVER be done without EXPLICIT USER PERMISSION.      ║
+║                                                                  ║
+║  If you are an AI agent: ASK THE USER before proceeding.         ║
+║  If the user did not explicitly request this: STOP NOW.          ║
+║                                                                  ║
+║  Did the user explicitly approve this checksum update?           ║
+╚══════════════════════════════════════════════════════════════════╝
+""")
     issues = validate_path(p)
-    errors = [i for i in issues if i.level == "error"]
+    if update_checksum:
+        # when updating checksum, only block on non-checksum errors
+        errors = [i for i in issues if i.level == "error" and i.rule != "spec_checksum"]
+    else:
+        errors = [i for i in issues if i.level == "error"]
     if errors:
         print("Cannot stamp — errors must be resolved first:")
         for e in errors:
@@ -416,6 +520,32 @@ def cmd_stamp(target: str):
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     text = p.read_text()
     text = re.sub(r"last_validated:.*", f"last_validated: {ts}", text)
+    if update_checksum:
+        doc = load_doc(p)
+        old_checksum = (
+            doc.frontmatter.get("spec_checksum", "(none)") if doc else "(none)"
+        )
+        new_checksum = doc.spec_checksum if doc else None
+        if doc and doc.spec_checksum:
+            text = re.sub(
+                r"spec_checksum:.*",
+                f"spec_checksum: {doc.spec_checksum}",
+                text,
+            )
+            print(f"✓  updated spec_checksum: {doc.spec_checksum}")
+        elif doc and doc.blocks:
+            # no checksum existed yet — add it after the depends_on line
+            text = re.sub(
+                r"(depends_on: .*)",
+                f"\\1\nspec_checksum: {new_checksum}",
+                text,
+            )
+            print(f"✓  added spec_checksum: {new_checksum}")
+        # log the checksum change
+        if new_checksum:
+            _log_checksum_update(
+                p, old_checksum, new_checksum, ts, approved_by=approved_by
+            )
     p.write_text(text)
     print(f"✓  stamped {p} — {ts}")
 
@@ -457,7 +587,15 @@ def main():
         case ["types"]:
             cmd_types()
         case ["stamp", target]:
-            cmd_stamp(target)
+            rest = args[2:]
+            update_checksum = "--update-checksum" in rest
+            approved_by = ""
+            for i, arg in enumerate(rest):
+                if arg == "--approved-by" and i + 1 < len(rest):
+                    approved_by = rest[i + 1]
+                elif arg.startswith("--approved-by="):
+                    approved_by = arg.removeprefix("--approved-by=")
+            cmd_stamp(target, update_checksum=update_checksum, approved_by=approved_by)
         case _:
             print(__doc__)
 
