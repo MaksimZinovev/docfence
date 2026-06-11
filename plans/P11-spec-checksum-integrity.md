@@ -266,3 +266,18 @@ match:
 - Key risk: spec_coverage section-to-spec-block matching — section headings in markdown need to be matched to their nearest spec block; edge cases with same-named headings or missing headings may produce false positives
 - Gaps: No automated test suite; heading-to-spec-block matching heuristic needs real-world testing
 - Recommendation: proceed — all changes are incremental and reversible, with manual verification sufficient given the lack of a test framework
+
+## Implementation Highlights
+
+All 7 steps completed. Commit `d87c971`.
+
+**As planned:** Typo fix, spec_checksum in loader/validator/scaffold, spec_coverage in validator, stamp --update-checksum, SKILL.md H11.
+
+**Extra changes beyond plan:**
+- `_extract_headings` skips fenced code blocks — `# Test 1:` in ```bash no longer detected as headings
+- Heading-to-spec-block matching uses ±10 line tolerance (approximate line numbers from parser)
+- `SpecBlock` dataclass gained `raw_toml` field — checksum needs original TOML
+- `stamp --approved-by` flag + `_log_checksum_update()` writes `.docfence/checksum.log`
+- Iron law banner on `--update-checksum` — agents must never run without user permission
+- `spec_checksum` hint suppressed when document has unfilled placeholders
+- Extra rule keys (inherited defaults) reported as hints, not errors
