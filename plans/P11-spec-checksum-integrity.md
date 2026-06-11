@@ -281,3 +281,8 @@ All 7 steps completed. Commit `d87c971`.
 - Iron law banner on `--update-checksum` — agents must never run without user permission
 - `spec_checksum` hint suppressed when document has unfilled placeholders
 - Extra rule keys (inherited defaults) reported as hints, not errors
+**Review fixes (post-review):**
+- Blocker fix: `cmd_stamp` fallback now uses `last_validated` anchor when `depends_on` is missing; guards against `None` checksum value
+- Guard added: stale `spec_checksum` with zero spec blocks now raises error (not silently ignored)
+- `from __future__ import annotations` added to loader.py for Python 3.9 compat
+- `SpecBlock.raw_toml` and other fields given defaults for forward compatibility

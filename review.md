@@ -122,3 +122,6 @@ Intent is well-served. The implementation delivers the two-layer defense as desi
 **Three notes**: (1) stale `spec_checksum` with zero blocks undetected, (2) parallel checksum assembly in scaffold is fragile, (3) `str | None` requires Python 3.10+ — verify minimum version.
 
 Otherwise, solid work — the checksum round-trip is verified, coverage checks work, and the iron law banner is appropriately forceful.
+## Author Response
+
+Blocker fixed: `cmd_stamp` now falls back to `last_validated` anchor (not `depends_on`), guards `None` checksum. Stale checksum with zero spec blocks now raises error. `from __future__ import annotations` added for Python 3.9 compat. `SpecBlock` fields given defaults. Notes 2-4 accepted as known trade-offs. Commit on `feat/spec-checksum`.
