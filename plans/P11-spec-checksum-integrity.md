@@ -271,7 +271,7 @@ match:
 
 All 7 steps completed. Commit `d87c971`.
 
-**As planned:** Typo fix, spec_checksum in loader/validator/scaffold, spec_coverage in validator, stamp --update-checksum, SKILL.md H11.
+**Branch note:** Implementation was committed directly to `main` (commits `6275cc5`–`6fb0f17`). Should have been on a feature branch. Move to branch before further work. Typo fix, spec_checksum in loader/validator/scaffold, spec_coverage in validator, stamp --update-checksum, SKILL.md H11.
 
 **Extra changes beyond plan:**
 - `_extract_headings` skips fenced code blocks — `# Test 1:` in ```bash no longer detected as headings
