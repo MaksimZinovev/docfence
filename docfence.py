@@ -533,13 +533,20 @@ def cmd_stamp(target: str, update_checksum: bool = False, approved_by: str = "")
                 text,
             )
             print(f"✓  updated spec_checksum: {doc.spec_checksum}")
-        elif doc and doc.blocks:
-            # no checksum existed yet — add it after the depends_on line
-            text = re.sub(
-                r"(depends_on: .*)",
-                f"\\1\nspec_checksum: {new_checksum}",
-                text,
-            )
+        elif doc and doc.blocks and new_checksum:
+            # no checksum existed yet — add it after last_validated or depends_on
+            if re.search(r"depends_on:", text):
+                text = re.sub(
+                    r"(depends_on: .*)",
+                    f"\\1\nspec_checksum: {new_checksum}",
+                    text,
+                )
+            else:
+                text = re.sub(
+                    r"(last_validated: .*)",
+                    f"\\1\nspec_checksum: {new_checksum}",
+                    text,
+                )
             print(f"✓  added spec_checksum: {new_checksum}")
         # log the checksum change
         if new_checksum:

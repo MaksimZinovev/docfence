@@ -191,7 +191,19 @@ def validate_doc(doc: ParsedDoc, types_dir: Path, verbose: bool = False) -> list
                 )
 
     # --- spec_checksum: verify spec blocks haven't been modified or removed ---
-    if doc.spec_checksum is not None and doc.frontmatter.get("spec_checksum"):
+    # guard: frontmatter has checksum but all spec blocks removed
+    if not doc.blocks and doc.frontmatter.get("spec_checksum"):
+        issues.append(
+            Issue(
+                doc.path,
+                1,
+                "error",
+                rule="spec_checksum",
+                message="spec_checksum present in frontmatter but no spec blocks found — "
+                "spec blocks were removed. Restore them or remove spec_checksum.",
+            )
+        )
+    elif doc.spec_checksum is not None and doc.frontmatter.get("spec_checksum"):
         stored = doc.frontmatter["spec_checksum"]
         computed = doc.spec_checksum
         if stored != computed:

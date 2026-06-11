@@ -4,6 +4,8 @@ Parses a markdown file into:
   - a list of SpecBlock dataclasses
 """
 
+from __future__ import annotations
+
 import hashlib
 import re
 from dataclasses import dataclass, field
@@ -71,11 +73,11 @@ def _parse_kv(text: str) -> dict:
 @dataclass
 class SpecBlock:
     cfg: dict  # parsed TOML from inside the ```spec block
-    raw_toml: str  # raw TOML content of the spec block (for checksum computation)
-    sibling_text: str  # content immediately following the block
-    scope: str  # "document" or "section"
-    bid: str  # sha256[:8] of sibling_text at parse time
-    line_number: int
+    raw_toml: str = ""  # raw TOML content of the spec block (for checksum computation)
+    sibling_text: str = ""  # content immediately following the block
+    scope: str = ""  # "document" or "section"
+    bid: str = ""  # sha256[:8] of sibling_text at parse time
+    line_number: int = 0
     inherited_rules: list[str] = field(default_factory=list)  # rules from type defaults
 
 
