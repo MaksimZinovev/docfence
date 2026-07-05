@@ -237,7 +237,7 @@ docfence validate /tmp/test-plan.md 2>&1 | grep spec_checksum
 # Expected: Error listing missing rule keys from type definition
 
 # Test 6: stamp --update-checksum refreshes checksum
-docfence stamp --update-checksum /tmp/test-plan.md
+docfence stamp /tmp/test-plan.md --update-checksum 
 # Expected: Success message, frontmatter spec_checksum updated
 
 # Test 7: Validate an existing plan file (P10b)

@@ -3,7 +3,7 @@ statuses = ["draft", "active", "frozen", "done"]
 required_fields = ["id", "status", "owner"]
 
 [defaults]
-max_chars = 20000
+max_chars = 15000
 banned_words = ["TODO", "TBD", "placeholder"]
 required_sections = [
   "Context",
@@ -66,12 +66,23 @@ has_gh = '\bgh\b.*\(CLI\).*: Yes\b'
 has_deepwiki = 'deepwiki.*\(MCP\).*: Yes\b'
 
 [template_vars.sections.Approach]
-fill = "[REPLACE] Recommended direction and rationale — why this over alternatives? Max ~10 lines."
-max_chars = 800
-banned_words = ["Q1:", "Q2:", "Q3:", "**Q", "Question:"]
+fill = """[REPLACE] Recommended direction and rationale — why this over alternatives? Max ~10 lines. Ask yourself guiding questions to drive the researing, planning, critical thinking naturally while respecting the workflow outlined in skill. Ask user, when uncertain or major decision. Do not write answers in Approach section. Questions must cover and focus on: key plan sections, context, user intent, hard constraints, evidence-led, research mindset (not memory). Write questions using format inspired by conventional commits. Example: Q1(what): what whould be alternative approaches to ...?; Q2(how): how we can ...?; Q3(out of scope): should X be out of scope?; Q5(verification): what should I include in verification from user perspective?"""
+max_chars = 1400
+
 
 [template_vars.sections.Approach.match]
+ 
+has_preamble = 'The content of the plan is aligned with the following guiding questions.' 
 has_alternative = '(alternative|instead of|rather than|compared to|over:|vs[.])'
+has_what_guiding_question = 'Q\d+\(what\)'
+has_how_guiding_question = 'Q\d+\(how\)'
+has_context_guiding_question = 'Q\d+\(context\).*key context'
+has_intent_guiding_question = 'Q\d+\(intent\).*key intent'
+has_out_of_scope_guiding_question = 'Q\d+\(out of scope\)'
+has_constraint_guiding_question = 'Q\d+\(key constraint\).*key constraint'
+has_evidence_guiding_question = 'Q\d+\(key evidence\).*key evidence'
+has_verification_guiding_question = 'Q\d+\(verification\).*key verification from user perspective'
+
 
 [template_vars.sections."Out of Scope"]
 fill = "[REPLACE] Bullet list of excluded items with one-line justification: item: reason. Minimum 2 items. No 'None.' cop-outs."
@@ -89,7 +100,7 @@ banned_words = ["**Step", "**Task", "**Phase"]
 has_step_evidence = '^- \[ \].*\(Source'
 min_3_steps = '^- \[( |x)\]'
 
-[template_vars.sections."Files to Modify"]
+[template_vars.segments."Files to Modify"]
 fill = "[REPLACE] Tree of files to modify with inline comments: `path/to/file` — CREATED/UPDATED/DELETED: what changes and why"
 
 [template_vars.sections."Files to Modify".match]
@@ -111,7 +122,13 @@ has_evidence_claim = '^- Claim:'
 has_confidence = 'Confidence:'
 
 [template_vars.sections.Verification]
-fill = "[REPLACE] Bash code blocks with # Test N: labels and # Expected: results. Put # Expected: on its own line after the command. Prefer inline # comments where possible. Include end-user testing. Minimum 2 tests."
+fill = "[REPLACE] Bash code blocks with # Test N: labels and # Expected: results. Put # Expected: on its own line after the command. Prefer inline # comments where possible. Include end-user testing. Minimum 2 tests. STATE-SPACE COVERAGE (required): enumerate the behavior's state space — empty/zero, minimum(1), intermediate, full/max, failure/error — and add one # Test N per point that matters. Source states from a mockup > conceptual model > intrinsic dimensions. A repro/happy case alone is NOT sufficient; at least one non-happy state (empty/partial/intermediate/boundary/failure) must be covered. Each [verify] claim from Approach must have a passing Test across its state space before the plan is 'done'."
+
+[template_vars.sections.Verification.match]
+has_verify_command = '^```bash'
+has_expected = '# Expected:'
+min_2_tests = '# Test \d'
+has_state_space = '(empty|zero|partial|intermediate|boundary|edge case|failure)'
 
 [template_vars.sections.Verification.match]
 has_verify_command = '^```bash'
