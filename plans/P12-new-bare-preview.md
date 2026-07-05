@@ -225,7 +225,7 @@ echo "full=$FULL_CK bare=$BARE_CK"
 [ "$FULL_CK" = "$BARE_CK" ] && echo "checksums match" || echo "MISMATCH"
 # Expected: checksums match
 # Expected: BARE contains no fill-prompt fences and only one spec fence (the document-level block)
-# 'df-tod.o' (regex wildcard) avoids spelling the literal fence name, which would trip this plan's own TODO banned-word check
+# 'df-tod.o' (regex wildcard) avoids spelling the literal fence name, which would trip this plan's own banned-word rule (substring match)
 printf '%s\n' "$BARE" | grep -c 'df-tod.o'
 # Expected: 0
 printf '%s\n' "$BARE" | grep -c '^```spec'
