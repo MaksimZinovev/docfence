@@ -46,6 +46,11 @@ from core.loader import load_doc
 from core.types import TypeDef, load_types, resolve_type
 from core.validator import validate_path, Issue
 
+
+class InvalidDocTypeError(ValueError):
+    """Raised when `docfence new` receives a flag-like token as the doc type."""
+
+
 # ── colors ───────────────────────────────────────────────────────────────────
 
 RED = "\033[31m"
@@ -444,7 +449,7 @@ def cmd_new(
     bare: bool = False,
 ):
     if doc_type.startswith("--"):
-        print(
+        raise InvalidDocTypeError(
             f"'{doc_type}' looks like a flag, not a doc type — flags go after the type.\n\n"
             "Examples:\n"
             "  docfence new plan --bare\n"
@@ -452,7 +457,6 @@ def cmd_new(
             '  docfence new plan --bare --set title="My Plan"\n\n'
             "Run `docfence types` to see available types."
         )
-        sys.exit(1)
 
     registry = load_types(Path.cwd())
     type_def = resolve_type(doc_type, registry) if registry else None
@@ -631,7 +635,11 @@ def main():
                     i += 1
                 else:
                     i += 1
-            cmd_new(doc_type, output=output, overrides=overrides or None, bare=bare)
+            try:
+                cmd_new(doc_type, output=output, overrides=overrides or None, bare=bare)
+            except InvalidDocTypeError as e:
+                print(e)
+                sys.exit(1)
         case ["types"]:
             cmd_types()
         case ["stamp", target]:
