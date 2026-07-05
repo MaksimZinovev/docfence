@@ -271,16 +271,15 @@ def _generate_scaffold(
     overrides: dict | None = None,
     bare: bool = False,
 ) -> str:
-    """Generate a full scaffolded document from a TypeDef.
+    """Generate a scaffolded document from a TypeDef.
 
     Sections come from template_vars.sections (falling back to required_sections).
     df-todo blocks carry name and fill fields from template_vars.
     Spec blocks carry explicit rules from defaults.
 
-    When bare=True, only the frontmatter, document-level spec block, and section
-    headings are rendered; per-section spec blocks and fill-prompt blocks are
-    omitted. The spec_checksum is still computed from the full spec-block set so
-    it matches a normal scaffold of the same type.
+    When bare=True, only the frontmatter and document-level spec block are
+    rendered. The spec_checksum is still computed from the full spec-block set
+    so it matches a normal scaffold of the same type.
     """
     overrides = overrides or {}
     defaults = type_def.defaults if type_def else {}
@@ -380,7 +379,7 @@ def _generate_scaffold(
     combined = "\n".join(all_raw_tomls)
     spec_checksum = hashlib.sha256(combined.encode()).hexdigest()[:8]
 
-    return (
+    frontmatter_and_doc_spec = (
         f"---\n"
         f"id: {fm_id}\n"
         f"type: {doc_type}\n"
@@ -391,9 +390,17 @@ def _generate_scaffold(
         f"last_validated: ~\n"
         f"---\n\n"
         f"# {fm_title}\n\n"
-        f"{doc_spec}\n\n"
-        f"{sections}\n"
+        f"{doc_spec}\n"
     )
+
+    if bare:
+        return (
+            f"# Concise scaffold preview for type: {doc_type} — use "
+            f"`docfence new {doc_type}` for full template\n\n"
+            f"{frontmatter_and_doc_spec}"
+        )
+
+    return frontmatter_and_doc_spec + f"\n{sections}\n"
 
 
 def _format_spec_kv(key: str, value) -> str:
