@@ -123,7 +123,7 @@ sample-docs/                                            # ← folder root
 docfence validate <file|folder>         # validate one file or all .md in folder
 docfence validate <file|folder> --verbose  # show passing checks + section headings
 docfence new <type>                       # scaffold a doc with df-todo placeholders
-docfence new <type> --bare             # concise preview: frontmatter + headings
+docfence new <type> --bare                 # concise preview: frontmatter + global rules
 docfence new <type> --output <path>        # scaffold and write to file
 docfence new <type> --set owner=alice     # override frontmatter defaults
 docfence types                             # list all available types
