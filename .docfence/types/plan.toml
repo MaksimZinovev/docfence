@@ -130,11 +130,6 @@ has_expected = '# Expected:'
 min_2_tests = '# Test \d'
 has_state_space = '(empty|zero|partial|intermediate|boundary|edge case|failure)'
 
-[template_vars.sections.Verification.match]
-has_verify_command = '^```bash'
-has_expected = '# Expected:'
-min_2_tests = '# Test \d'
-
 [template_vars.sections."Bottom Line"]
 fill = "[REPLACE] Per-step confidence (list each, then average; note outliers), key risk, gaps, and Recommendation: proceed/hold/redirect."
 
