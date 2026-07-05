@@ -6,6 +6,7 @@ Usage examples:
   docfence validate notes/my-feature.md     # validate one file
   docfence validate docs/                   # validate all .md in folder
   docfence new feature                      # print a blank template
+  docfence new feature --bare               # concise preview: frontmatter + headings only
   docfence types                            # list all known doc types
   docfence stamp docs/my-feature.md         # write last_validated timestamp
   docfence stamp --update-checksum doc.md   # also refresh spec_checksum
@@ -265,13 +266,21 @@ def _load_types_list(start: Path) -> list[str]:
 
 
 def _generate_scaffold(
-    doc_type: str, type_def: TypeDef | None, overrides: dict | None = None
+    doc_type: str,
+    type_def: TypeDef | None,
+    overrides: dict | None = None,
+    bare: bool = False,
 ) -> str:
     """Generate a full scaffolded document from a TypeDef.
 
     Sections come from template_vars.sections (falling back to required_sections).
     df-todo blocks carry name and fill fields from template_vars.
     Spec blocks carry explicit rules from defaults.
+
+    When bare=True, only the frontmatter, document-level spec block, and section
+    headings are rendered; per-section spec blocks and fill-prompt blocks are
+    omitted. The spec_checksum is still computed from the full spec-block set so
+    it matches a normal scaffold of the same type.
     """
     overrides = overrides or {}
     defaults = type_def.defaults if type_def else {}
@@ -310,6 +319,11 @@ def _generate_scaffold(
     section_blocks = []
     for name in section_names:
         sec_cfg = sections_cfg.get(name, {})
+
+        if bare:
+            section_blocks.append(f"## {name}")
+            continue
+
         fill = sec_cfg.get(
             "fill",
             "[REPLACE] Write your content — delete this block and write your content",
@@ -416,11 +430,27 @@ def cmd_validate(target: str, verbose: bool = False):
         sys.exit(1)
 
 
-def cmd_new(doc_type: str, output: Path | None = None, overrides: dict | None = None):
+def cmd_new(
+    doc_type: str,
+    output: Path | None = None,
+    overrides: dict | None = None,
+    bare: bool = False,
+):
+    if doc_type.startswith("--"):
+        print(
+            f"'{doc_type}' looks like a flag, not a doc type — flags go after the type.\n\n"
+            "Examples:\n"
+            "  docfence new plan --bare\n"
+            "  docfence new feature --bare --output docs/my-feature.md\n"
+            '  docfence new plan --bare --set title="My Plan"\n\n'
+            "Run `docfence types` to see available types."
+        )
+        sys.exit(1)
+
     registry = load_types(Path.cwd())
     type_def = resolve_type(doc_type, registry) if registry else None
 
-    content = _generate_scaffold(doc_type, type_def, overrides)
+    content = _generate_scaffold(doc_type, type_def, overrides, bare=bare)
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(content)
@@ -571,9 +601,13 @@ def main():
             rest = args[2:]
             output = None
             overrides = {}
+            bare = False
             i = 0
             while i < len(rest):
-                if rest[i] == "--output" and i + 1 < len(rest):
+                if rest[i] == "--bare":
+                    bare = True
+                    i += 1
+                elif rest[i] == "--output" and i + 1 < len(rest):
                     output = Path(rest[i + 1])
                     i += 2
                 elif rest[i] == "--set" and i + 1 < len(rest):
@@ -590,7 +624,7 @@ def main():
                     i += 1
                 else:
                     i += 1
-            cmd_new(doc_type, output=output, overrides=overrides or None)
+            cmd_new(doc_type, output=output, overrides=overrides or None, bare=bare)
         case ["types"]:
             cmd_types()
         case ["stamp", target]:

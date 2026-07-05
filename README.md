@@ -98,9 +98,9 @@ We will build background jobs. TODO add progress tracking.
 $ docfence validate sample-docs/
 #              ↑ run on a folder to validate all .md files inside
 
-sample-docs/                                   									# ← folder root
-├── ✗ bad-feature.md                           									# ✗ = has errors (stamp blocked)
-│   ├── L1 frontmatter (type: feature)         									# ← L1 = line 1; frontmatter checks come from the type definition
+sample-docs/                                            # ← folder root
+├── ✗ bad-feature.md                                    # ✗ = has errors (stamp blocked)
+│   ├── L1 frontmatter (type: feature)                  # ← L1 = line 1; frontmatter checks come from the type definition
 │   │   ├── ✗ frontmatter: missing required field 'owner'       # 'owner' is required_fields in the type .toml
 │   │   └── ✗ status: 'brainstorm' not valid → allowed: draft, active, frozen, done  # status must be in type's statuses list
 │   ├── L4 spec block (type: feature, scope: document)           # ← L4 = line 4; scope: document = rules apply to whole file
@@ -123,6 +123,7 @@ sample-docs/                                   									# ← folder root
 docfence validate <file|folder>         # validate one file or all .md in folder
 docfence validate <file|folder> --verbose  # show passing checks + section headings
 docfence new <type>                       # scaffold a doc with df-todo placeholders
+docfence new <type> --bare             # concise preview: frontmatter + headings
 docfence new <type> --output <path>        # scaffold and write to file
 docfence new <type> --set owner=alice     # override frontmatter defaults
 docfence types                             # list all available types
