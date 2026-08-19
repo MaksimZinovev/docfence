@@ -3,7 +3,7 @@ statuses = ["draft", "active", "frozen", "done"]
 required_fields = ["id", "status", "owner"]
 
 [defaults]
-max_chars = 15000
+max_chars = 10000
 banned_words = ["TODO", "TBD", "placeholder"]
 required_sections = [
   "Context",
@@ -60,8 +60,6 @@ banned_words = [
 
 [template_vars.sections."Tools & Skills".match]
 min_3_ynp = '^- .+: (Yes|No|Possibly)\b'
-has_cx = '\bcx\b.*\(Skills\).*: Yes\b'
-has_ck = '\bck\b.*\(Skills\).*: Yes\b'
 has_gh = '\bgh\b.*\(CLI\).*: Yes\b'
 has_deepwiki = 'deepwiki.*\(MCP\).*: Yes\b'
 

@@ -46,6 +46,16 @@ from core.loader import load_doc
 from core.types import TypeDef, load_types, resolve_type
 from core.validator import validate_path, Issue
 
+# Ensure Unicode glyphs (✗ ✓ ⚠ 💡) render on Windows consoles using a legacy
+# codepage (e.g. cp1252). Safe no-op on POSIX / UTF-8 terminals.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        try:
+            _reconfigure(encoding="utf-8")
+        except (OSError, ValueError):
+            pass
+
 
 class InvalidDocTypeError(ValueError):
     """Raised when `docfence new` receives a flag-like token as the doc type."""
